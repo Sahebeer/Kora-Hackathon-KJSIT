@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.engine.main_engine import AluminumLCAEngine
+from src.utils.hardening import safe_startup_engine
 
 
 def run_demonstration():
@@ -25,9 +26,9 @@ def run_demonstration():
     print(" "*20 + "ALUMINUM LCA ENGINE DEMONSTRATION")
     print("="*80)
     
-    # Initialize engine
+    # Initialize engine (fail-safe)
     print("\n[1] Initializing Aluminum LCA Engine...")
-    engine = AluminumLCAEngine()
+    engine = safe_startup_engine(lambda: AluminumLCAEngine(), reason_msg="AluminumLCAEngine init failed")
     
     # Define different scenarios
     print("\n[2] Defining scenarios...")
@@ -176,8 +177,7 @@ def run_quick_example():
 
 
 if __name__ == "__main__":
-    # Run full demonstration
-    results = run_demonstration()
-    
-    # Optionally run quick example
-    # quick_result = run_quick_example()
+    # Run under safe wrapper so demo exceptions are handled gracefully
+    from src.utils.hardening import safe_main_wrapper
+
+    raise SystemExit(safe_main_wrapper(run_demonstration))

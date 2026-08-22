@@ -135,4 +135,7 @@ def main():
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # Run main under a safe wrapper that retries transient failures
+    from src.utils.hardening import safe_main_wrapper
+
+    raise SystemExit(safe_main_wrapper(main))
