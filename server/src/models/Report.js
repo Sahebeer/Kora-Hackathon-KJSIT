@@ -228,14 +228,13 @@ ReportSchema.virtual('id').get(function() {
   return this._id;
 });
 
-// Ensure 'name' always returns title if not set
+// Ensure 'name' always returns title
 ReportSchema.virtual('name').get(function() {
-  return this.name || this.title;
+  return this.title || 'Untitled Report';
 });
 
-// Ensure 'category' is derived from status if not set
+// Ensure 'category' is derived from status
 ReportSchema.virtual('category').get(function() {
-  if (this.category) return this.category;
   if (this.status === 'archived') return 'archived';
   if (this.status === 'final') return 'completed';
   return 'active';
@@ -243,7 +242,7 @@ ReportSchema.virtual('category').get(function() {
 
 // Ensure 'version' is always available
 ReportSchema.virtual('version').get(function() {
-  return this.version || this.schemaVersion || '1.0';
+  return this.schemaVersion || '1.0';
 });
 
 // Ensure summary fields for frontend

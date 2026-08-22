@@ -132,11 +132,11 @@ const wizardWorkflowSchema = new mongoose.Schema(
     beneficiation: {
       applicableProcesses: [{
         type: String,
-        enum: ['crushing', 'washing_screening', 'grinding', 'magnetic_separation', 'flotation', 'dry_separation', 'gravity_separation', 'others']
+        trim: true
       }],
       processes: [{
         type: String,
-        enum: ['crushing', 'washing_screening', 'grinding', 'magnetic_separation', 'flotation', 'dry_separation', 'gravity_separation', 'others']
+        trim: true
       }],
       others: String,
       processOthers: String,
@@ -263,31 +263,25 @@ const wizardWorkflowSchema = new mongoose.Schema(
     smelting: {
       applicableProcesses: [{
         type: String,
-        enum: ['pre_baking_anodes', 'anode_effect_control', 'electrolysis', 'bath_chemistry', 'off_gas_treatment', 'others']
+        trim: true
       }],
       processes: [{
         type: String,
-        enum: ['pre_baking_anodes', 'anode_effect_control', 'electrolysis', 'bath_chemistry', 'off_gas_treatment', 'others']
+        trim: true
       }],
       others: String,
       processOthers: String,
       variants: [{
         type: String,
-        enum: ['pre_baked_cells', 'soderberg_cells', 'inert_anodes_low_carbon', 'dynamic_load', 'renewable_powered', 'others']
+        trim: true
       }],
       variantsOthers: String,
       variantOthers: String,
-      energySource: {
-        type: String,
-        enum: ['Coal-based', 'Natural gas', 'Hydropower', 'Renewable (solar/wind)', 'Mixed sources']
-      },
+      energySource: String,
       energyDemand: Number, // kWh per tonne
       electricityDemand: Number, // kWh per tonne
       co2Emissions: Number, // kg per tonne
-      cellTechnology: {
-        type: String,
-        enum: ['Pre-baked', 'Soderberg', 'Inert Anode']
-      },
+      cellTechnology: String,
       pfcEmissions: Number, // kg per tonne
       so2: Number, // kg per tonne
       nox: Number, // kg per tonne
@@ -324,29 +318,26 @@ const wizardWorkflowSchema = new mongoose.Schema(
     manufacturing: {
       applicableProcesses: [{
         type: String,
-        enum: ['casting', 'rolling', 'extrusion', 'forging', 'surface_treatment', 'joining', 'design_recycling', 'others']
+        trim: true
       }],
       processes: [{
         type: String,
-        enum: ['casting', 'rolling', 'extrusion', 'forging', 'surface_treatment', 'joining', 'design_recycling', 'others']
+        trim: true
       }],
       others: String,
       processOthers: String,
       casting: [{
         type: String,
-        enum: ['ingot', 'billet', 'continuous']
+        trim: true
       }],
       castingProcesses: [{
         type: String,
-        enum: ['ingot', 'billet', 'continuous']
+        trim: true
       }],
       transportDistance: Number, // km
       scrapRate: Number, // %
       recycledContent: Number, // %
-      transportMode: {
-        type: String,
-        enum: ['Road', 'Rail', 'Sea', 'Air', 'Mixed', 'Others']
-      },
+      transportMode: String,
       transportModeOthers: String,
       transportEmissions: Number, // kg CO₂e per tonne-km
       transportEmissionsPerTkm: Number, // kg CO₂e per tonne-km
@@ -356,21 +347,15 @@ const wizardWorkflowSchema = new mongoose.Schema(
       fabricationEmissions: Number, // kg CO₂e per tonne
       lightweighting: [{
         type: String,
-        enum: ['automotive', 'aerospace', 'construction', 'packaging', 'others']
+        trim: true
       }],
       lightweightingSectors: [{
         type: String,
-        enum: ['automotive', 'aerospace', 'construction', 'packaging', 'others']
+        trim: true
       }],
       lightweightingOthers: String,
-      corrosionBehaviorImpact: {
-        type: String,
-        enum: ['minimal', 'moderate', 'severe', 'others']
-      },
-      corrosionImpact: {
-        type: String,
-        enum: ['minimal', 'moderate', 'severe', 'others']
-      },
+      corrosionBehaviorImpact: String,
+      corrosionImpact: String,
       corrosionBehaviorOthers: String,
       corrosionOthers: String,
       
@@ -398,30 +383,24 @@ const wizardWorkflowSchema = new mongoose.Schema(
     recycling: {
       applicableProcesses: [{
         type: String,
-        enum: ['collection', 'cleaning', 'sorting', 're_alloying', 'remelting', 'casting_new', 'others']
+        trim: true
       }],
       processes: [{
         type: String,
-        enum: ['collection', 'cleaning', 'sorting', 're_alloying', 'remelting', 'casting_new', 'others']
+        trim: true
       }],
       others: String,
       processOthers: String,
       variants: [{
         type: String,
-        enum: ['closed_loop', 'open_loop', 'secondary', 'others']
+        trim: true
       }],
       variantsOthers: String,
       variantOthers: String,
       scrapInputPercent: Number, // %
       collectionRatePercent: Number, // %
-      recyclingMethods: {
-        type: String,
-        enum: ['Closed-loop', 'Open-loop', 'Mixed', 'closed-loop', 'open-loop', 'mixed']
-      },
-      recyclingMethod: {
-        type: String,
-        enum: ['Closed-loop', 'Open-loop', 'Mixed', 'closed-loop', 'open-loop', 'mixed']
-      },
+      recyclingMethods: String,
+      recyclingMethod: String,
       recoveryYield: Number, // %
       recoveryYieldPercent: Number, // %
       recyclingEfficiencyPercent: Number, // %
@@ -431,7 +410,7 @@ const wizardWorkflowSchema = new mongoose.Schema(
       emissionSavings: Number, // kg CO₂e saved per tonne
       sortingMethods: [{
         type: String,
-        enum: ['manual_sorting', 'optical_sorting', 'xrf_spectroscopy', 'sensor_based', 'eddy_current', 'others', 'manual', 'optical']
+        trim: true
       }],
       sortingOthers: String,
       closedLoopRecyclingPercentage: Number, // %
@@ -463,13 +442,17 @@ const wizardWorkflowSchema = new mongoose.Schema(
     valorization: {
       wasteTypes: [{
         type: String,
-        enum: ['red_mud', 'spl', 'dross', 'fluoride_gases', 'slag', 'others']
+        trim: true
       }],
       wasteTypeOthers: String,
       wasteTypesOthers: String,
       valorizationMethods: [{
         type: String,
-        enum: ['cement_additive', 'soil_stabilization', 'iron_extraction', 'rare_earth_extraction', 'spl_encapsulation', 'dross_recovery', 'fluoride_capture', 'others']
+        trim: true
+      }],
+      valorizationRoutes: [{
+        type: String,
+        trim: true
       }],
       valorizationMethodsOthers: String,
       methodsOthers: String,

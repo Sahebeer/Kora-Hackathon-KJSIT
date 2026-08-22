@@ -1507,13 +1507,18 @@ const generateAndSaveReport = asyncHandler(async (req, res) => {
   if (workflow.tags) tags.push(...workflow.tags);
 
   // Create Report document
+  const userId = workflow.userId?._id || workflow.userId || req.user?._id;
+  const userName = workflow.userId?.name || req.user?.name || 'Engineer';
+  const userEmail = workflow.userId?.email || req.user?.email || 'user@example.com';
+
   const reportData = {
     title: `LCA Report: ${workflow.name}`,
     description: workflow.description || `Comprehensive LCA report generated from wizard workflow for ${workflow.metalType} processing`,
+    userId: userId,
     author: {
-      userId: workflow.userId._id,
-      name: workflow.userId.name,
-      email: workflow.userId.email
+      userId: userId,
+      name: userName,
+      email: userEmail
     },
     status: workflow.status === 'submitted' ? 'final' : 'draft',
     visibility: workflow.isPublic ? 'public' : 'private',
