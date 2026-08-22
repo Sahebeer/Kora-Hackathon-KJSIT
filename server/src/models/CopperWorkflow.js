@@ -707,6 +707,7 @@ const copperWorkflowSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    strict: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
   }

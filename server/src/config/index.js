@@ -214,7 +214,7 @@ async function autoSeedDemoWorkflows() {
           concentrateGradePercentCu: 28.0,
           smeltingTechnique: 'flash',
           smeltingEnergyMjPerTonne: 4800,
-          fuelType: 'natural_gas',
+          fuelType: 'natural gas',
           sulfurCaptureEfficiencyPercent: 99.2,
           slagProducedKgPerTonne: 950,
           electrorefiningEnergyKwhPerTonne: 380,
@@ -237,8 +237,11 @@ async function autoSeedDemoWorkflows() {
           productYield: 93.5
         },
         copperUsePhase: {
-          productType: 'EV Traction Motor Windings',
-          applicationSector: 'Electric Vehicles & Renewable Energy Grid',
+          productType: 'wire',
+          applicationSector: 'electrical',
+          installationMethod: 'permanent',
+          environmentType: 'indoor',
+          transportationMode: 'rail',
           productLifetimeYears: 25,
           efficiencyRating: 98.5,
           energySavingsPercent: 15.0,
@@ -246,17 +249,20 @@ async function autoSeedDemoWorkflows() {
           reusePotentialPercent: 95.0
         },
         copperRecycling: {
-          scrapType: 'No. 1 Bare Bright Wire',
+          scrapType: 'post_consumer',
           collectionRate: 78.0,
           sortingTechnology: 'sensor_based',
           remeltingEnergy: 1100,
           recoveredCopperPurity: 99.95,
           recoveryYield: 94.0,
           recycledContent: 80.0,
+          furnaceType: 'shaft',
+          recycledOutputForm: 'rod',
           ghgEmissions: 480
         },
         copperValorization: {
-          wasteType: 'Copper Slag & Flue Gas',
+          wasteType: 'slag',
+          valorizationMethod: 'reuse',
           wasteGeneration: 950,
           valorizationRate: 85.0,
           metalRecoveryRate: 92.0,

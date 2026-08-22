@@ -37,7 +37,7 @@ export default function MetalSelection({ onSelect }) {
   const [selectedMetal, setSelectedMetal] = useState(null);
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
-  const [openProjectsExpanded, setOpenProjectsExpanded] = useState(false);
+  const [openProjectsExpanded, setOpenProjectsExpanded] = useState(true);
   const [recentProjects, setRecentProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
