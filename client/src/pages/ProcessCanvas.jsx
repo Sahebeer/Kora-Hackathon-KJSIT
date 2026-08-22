@@ -22,9 +22,10 @@ import { useCanvasState } from '@/hooks/useCanvasState';
 import { useDragDrop } from '@/hooks/useDragDrop';
 
 // Utils
-import { exportWorkflow } from '@/utils/canvasUtils';
+import { exportWorkflow, createCopperCircularTemplate } from '@/utils/canvasUtils';
+import { processLibrary } from '@/data/processLibrary';
 
-const ProcessCanvas = ({ initialMetal = 'steel', projectName = 'Untitled Workflow' }) => {
+const ProcessCanvas = ({ initialMetal = 'copper', projectName = 'Untitled Workflow' }) => {
   // Core state management
   const {
     nodes,
@@ -137,6 +138,24 @@ const ProcessCanvas = ({ initialMetal = 'steel', projectName = 'Untitled Workflo
     toast.success('Canvas cleared');
   }, [clearCanvas]);
   
+  // Handle template loading
+  const handleLoadTemplate = useCallback(() => {
+    const { nodes: tNodes, edges: tEdges } = createCopperCircularTemplate(processLibrary);
+    setNodes(tNodes);
+    setEdges(tEdges);
+    setSelectedMetal('copper');
+    toast.success('✨ Loaded Malanjkhand Copper Circular Ecosystem Template!', {
+      description: '7 fully connected nodes with TSL scrap remelting & byproduct valorization'
+    });
+  }, [setNodes, setEdges, setSelectedMetal]);
+
+  // Auto-populate Copper circular ecosystem if canvas is empty on initial copper selection
+  useEffect(() => {
+    if (selectedMetal === 'copper' && nodes.length === 0) {
+      handleLoadTemplate();
+    }
+  }, [selectedMetal]);
+
   // Handle export
   const handleExport = useCallback(() => {
     try {
@@ -215,6 +234,7 @@ const ProcessCanvas = ({ initialMetal = 'steel', projectName = 'Untitled Workflo
             isConnectMode={isConnectMode}
             onToggleConnectMode={toggleConnectMode}
             onClear={handleClear}
+            onLoadTemplate={handleLoadTemplate}
             nodeCount={nodes.length}
             edgeCount={edges.length}
             hasRightSidebar={!!selectedNode}

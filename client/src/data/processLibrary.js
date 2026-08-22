@@ -746,6 +746,229 @@ export const processLibrary = {
         hasSubprocesses: false
       }
     ]
+  },
+  copper: {
+    extraction: [
+      {
+        id: 'openPitMiningCu',
+        name: 'Open Pit Mining (Chalcopyrite)',
+        label: 'Open Pit Mine',
+        icon: Mountain,
+        description: 'Surface extraction of copper sulfide deposits with electric shovels',
+        color: '#B87968',
+        hasSubprocesses: false
+      },
+      {
+        id: 'undergroundMiningCu',
+        name: 'Underground Deep Mining',
+        label: 'Underground Mine',
+        icon: Construction,
+        description: 'Sublevel stoping and block caving for high-grade copper veins',
+        color: '#8B4513',
+        hasSubprocesses: false
+      },
+      {
+        id: 'inSituLeachingCu',
+        name: 'In-Situ Leaching (ISL)',
+        label: 'In-Situ Leaching',
+        icon: Droplet,
+        description: 'In-place chemical leaching for low-grade oxide deposits',
+        color: '#20B2AA',
+        hasSubprocesses: false
+      },
+      {
+        id: 'drillingBlastingCu',
+        name: 'Precision Drilling & Blasting',
+        label: 'Drill & Blast',
+        icon: Drill,
+        description: 'Emulsion explosives fragmentation with smart seismic control',
+        color: '#CD853F',
+        hasSubprocesses: false
+      },
+      {
+        id: 'electricHaulageCu',
+        name: 'Electric Trolley Haul Fleet',
+        label: 'Electric Haulage',
+        icon: Truck,
+        description: 'Zero-emission trolley-assist ore transportation to primary crusher',
+        color: '#FF6347',
+        hasSubprocesses: false
+      }
+    ],
+    processing: [
+      {
+        id: 'crushingGrindingCu',
+        name: 'SAG & Ball Mill Comminution',
+        label: 'Milling & Grinding',
+        icon: Wrench,
+        description: 'Two-stage wet grinding to 75 µm optimal flotation liberation size',
+        color: '#A0522D',
+        hasSubprocesses: false
+      },
+      {
+        id: 'frothFlotationCu',
+        name: 'Froth Flotation (PAX / MIBC)',
+        label: 'Froth Flotation',
+        icon: Waves,
+        description: 'Differential xanthate flotation yielding 28% Cu concentrate',
+        color: '#4682B4',
+        hasSubprocesses: false
+      },
+      {
+        id: 'thickeningFiltrationCu',
+        name: 'Pressure Filter Dewatering',
+        label: 'Filter Dewatering',
+        icon: Filter,
+        description: 'Automated chamber filter press recovering 85% process water',
+        color: '#2E8B57',
+        hasSubprocesses: false
+      },
+      {
+        id: 'pasteTailingsCu',
+        name: 'Thickened Paste Tailings Stacking',
+        label: 'Paste Tailings',
+        icon: Layers,
+        description: 'Dry-stack paste tailings eliminating dam failure risk',
+        color: '#696969',
+        hasSubprocesses: false
+      }
+    ],
+    refining: [
+      {
+        id: 'flashSmeltingCu',
+        name: 'Outokumpu Flash Smelting',
+        label: 'Flash Smelting',
+        icon: Flame,
+        description: 'Autogenous oxygen-enriched flash reaction producing 65% Cu matte',
+        color: '#D2691E',
+        hasSubprocesses: false
+      },
+      {
+        id: 'tslSecondarySmelterCu',
+        name: 'Top Submerged Lance (TSL) Smelter',
+        label: 'TSL Smelter',
+        icon: Zap,
+        description: 'High-efficiency submerged combustion furnace for primary/secondary feed',
+        color: '#BA7967',
+        hasSubprocesses: false
+      },
+      {
+        id: 'electrorefiningCu',
+        name: 'Electrorefining Tankhouse (99.99% Cu)',
+        label: 'Electrorefining',
+        icon: Cpu,
+        description: 'Electrolytic refining with ISA technology producing LME Grade A Cathodes',
+        color: '#B87968',
+        hasSubprocesses: false
+      },
+      {
+        id: 'sxewHydrometCu',
+        name: 'Solvent Extraction & Electrowinning (SX-EW)',
+        label: 'SX-EW Refining',
+        icon: Droplets,
+        description: 'Hydrometallurgical extraction for oxide ores and low-grade leach liquors',
+        color: '#20B2AA',
+        hasSubprocesses: false
+      }
+    ],
+    manufacturing: [
+      {
+        id: 'continuousCastingRodCu',
+        name: 'Southwire Continuous Casting (8mm Rod)',
+        label: 'Continuous Casting',
+        icon: Factory,
+        description: 'Casting & in-line rolling for electrical wire and cable feedstock',
+        color: '#B87968',
+        hasSubprocesses: false
+      },
+      {
+        id: 'wireDrawingExtrusionCu',
+        name: 'Precision Wire Drawing & Extrusion',
+        label: 'Wire Drawing',
+        icon: Settings,
+        description: 'Multi-die cold drawing with continuous induction annealing',
+        color: '#A86B5C',
+        hasSubprocesses: false
+      },
+      {
+        id: 'ofhcAlloyMeltingCu',
+        name: 'OFHC Copper & Bronze Alloying',
+        label: 'Alloy Melting',
+        icon: Boxes,
+        description: 'Vacuum induction melting for oxygen-free high-conductivity alloys',
+        color: '#CD853F',
+        hasSubprocesses: false
+      }
+    ],
+    use_phase: [
+      {
+        id: 'evMotorWindingsCu',
+        name: 'EV Traction Motor Windings',
+        label: 'EV Traction Motors',
+        icon: Zap,
+        description: 'High-efficiency hairpin windings delivering 98.5% motor efficiency',
+        color: '#2E7D32',
+        hasSubprocesses: false
+      },
+      {
+        id: 'gridBusbarsCu',
+        name: 'High-Voltage Grid & Transformer Busbars',
+        label: 'Power Grid Busbars',
+        icon: Cpu,
+        description: '25-year ultra-low loss power distribution and renewable energy export',
+        color: '#4682B4',
+        hasSubprocesses: false
+      }
+    ],
+    recycling: [
+      {
+        id: 'closedLoopScrapRecyclingCu',
+        name: 'Sensor-Sorted Secondary Scrap Remelting',
+        label: 'Scrap Remelting',
+        icon: Recycle,
+        description: 'Closed-loop 80% recycled content scrap re-smelting via TSL',
+        color: '#2E7D32',
+        hasSubprocesses: false
+      },
+      {
+        id: 'opticalEddySortingCu',
+        name: 'Optical & Eddy Current Scrap Sorting',
+        label: 'Automated Sorting',
+        icon: Magnet,
+        description: 'High-speed automated grading separating Birch/Cliff copper scrap',
+        color: '#20B2AA',
+        hasSubprocesses: false
+      }
+    ],
+    valorization: [
+      {
+        id: 'slagGreenConcreteCu',
+        name: 'Copper Slag Granulation for Green Concrete',
+        label: 'Slag Green Sand',
+        icon: Layers,
+        description: '100% substitution of river sand in concrete (₹3.2M byproduct revenue)',
+        color: '#4A7C59',
+        hasSubprocesses: false
+      },
+      {
+        id: 'acidPlantConversionCu',
+        name: 'SO2 Catalytic Acid Plant (H2SO4)',
+        label: 'H2SO4 Acid Plant',
+        icon: Beaker,
+        description: 'Double absorption acid plant capturing 99.2% SO2 as commercial acid',
+        color: '#68538C',
+        hasSubprocesses: false
+      },
+      {
+        id: 'preciousMetalsRecoveryCu',
+        name: 'Anode Slimes Precious Metals Recovery',
+        label: 'Au/Ag/Se Recovery',
+        icon: Scale,
+        description: 'Hydrometallurgical extraction of gold, silver, selenium, and tellurium',
+        color: '#C9A96E',
+        hasSubprocesses: false
+      }
+    ]
   }
 };
 

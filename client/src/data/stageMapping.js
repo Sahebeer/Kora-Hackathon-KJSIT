@@ -25,6 +25,17 @@ export const stageConfig = {
       { id: 'recycling', label: 'Stage 6: Recycling', order: 6 },
       { id: 'valorization', label: 'Stage 7: Valorization', order: 7 }
     ]
+  },
+  copper: {
+    stages: [
+      { id: 'extraction', label: 'Stage 1: Mining', order: 1 },
+      { id: 'processing', label: 'Stage 2: Beneficiation', order: 2 },
+      { id: 'refining', label: 'Stage 3: Smelting & Extraction', order: 3 },
+      { id: 'manufacturing', label: 'Stage 4: Manufacturing', order: 4 },
+      { id: 'use_phase', label: 'Stage 5: Use Phase', order: 5 },
+      { id: 'recycling', label: 'Stage 6: Recycling', order: 6 },
+      { id: 'valorization', label: 'Stage 7: Valorization', order: 7 }
+    ]
   }
 };
 

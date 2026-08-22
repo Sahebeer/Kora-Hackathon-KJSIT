@@ -281,3 +281,41 @@ export const debounce = (func, wait) => {
     timeout = setTimeout(later, wait);
   };
 };
+
+/**
+ * Generate full pre-connected Copper Circular Ecosystem Canvas Template
+ */
+export const createCopperCircularTemplate = (processLibrary) => {
+  const cu = processLibrary?.copper;
+  if (!cu) return { nodes: [], edges: [] };
+
+  const pMining = cu.extraction?.find(p => p.id === 'openPitMiningCu') || cu.extraction?.[0];
+  const pBen = cu.processing?.find(p => p.id === 'frothFlotationCu') || cu.processing?.[0];
+  const pSmelt = cu.refining?.find(p => p.id === 'flashSmeltingCu') || cu.refining?.[0];
+  const pManuf = cu.manufacturing?.find(p => p.id === 'continuousCastingRodCu') || cu.manufacturing?.[0];
+  const pUse = cu.use_phase?.find(p => p.id === 'evMotorWindingsCu') || cu.use_phase?.[0];
+  const pRec = cu.recycling?.find(p => p.id === 'closedLoopScrapRecyclingCu') || cu.recycling?.[0];
+  const pVal = cu.valorization?.find(p => p.id === 'slagGreenConcreteCu') || cu.valorization?.[0];
+
+  const n1 = createProcessNode(pMining, { x: 60, y: 100 }, 'copper', 'extraction');
+  const n2 = createProcessNode(pBen, { x: 320, y: 100 }, 'copper', 'processing');
+  const n3 = createProcessNode(pSmelt, { x: 580, y: 100 }, 'copper', 'refining');
+  const n4 = createProcessNode(pManuf, { x: 840, y: 100 }, 'copper', 'manufacturing');
+  const n5 = createProcessNode(pUse, { x: 1100, y: 100 }, 'copper', 'use_phase');
+  const n6 = createProcessNode(pRec, { x: 840, y: 320 }, 'copper', 'recycling');
+  const n7 = createProcessNode(pVal, { x: 580, y: 320 }, 'copper', 'valorization');
+
+  const nodes = [n1, n2, n3, n4, n5, n6, n7];
+
+  const edges = [
+    createConnection(n1.id, n2.id), // Mining -> Beneficiation
+    createConnection(n2.id, n3.id), // Beneficiation -> Flash Smelting
+    createConnection(n3.id, n4.id), // Smelting -> Continuous Casting
+    createConnection(n4.id, n5.id), // Manufacturing -> EV Motor Use
+    createConnection(n5.id, n6.id), // End-of-Life -> Secondary Scrap Remelting
+    createConnection(n6.id, n3.id), // Circular Feedback: Secondary Scrap -> Smelter!
+    createConnection(n3.id, n7.id), // Byproduct Valorization: Slag -> Green Concrete Sand!
+  ];
+
+  return { nodes, edges };
+};

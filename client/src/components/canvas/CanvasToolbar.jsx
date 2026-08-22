@@ -5,13 +5,14 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Link2, Trash2, Info } from 'lucide-react';
+import { Link2, Trash2, Info, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CanvasToolbar = ({
   isConnectMode,
   onToggleConnectMode,
   onClear,
+  onLoadTemplate,
   nodeCount,
   edgeCount,
   hasRightSidebar = false
@@ -22,6 +23,17 @@ const CanvasToolbar = ({
     }`}>
       <div className="bg-[#FCFAF6] rounded-xl shadow-md border border-[#DED6CC] p-2">
         <div className="flex items-center gap-2">
+          {/* Load Circular Template Button */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onLoadTemplate}
+            className="border-[#BA7967]/40 bg-[#B87968]/10 text-[#B87968] hover:bg-[#B87968] hover:text-white cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 mr-1.5" />
+            Load Circular Template
+          </Button>
+
           {/* Stats */}
           <div className="flex items-center gap-3 px-3 py-1.5 bg-[#F5F0E8] rounded-lg border border-[#DED6CC]">
             <div className="flex items-center gap-1.5">

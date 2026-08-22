@@ -25,6 +25,7 @@ const ProcessLibrary = ({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef(null);
   const metals = [
+    { id: 'copper', label: 'Copper', color: '#BA7967' },
     { id: 'steel', label: 'Steel', color: '#708090' },
     { id: 'aluminum', label: 'Aluminum', color: '#A8A9AD' }
   ];
