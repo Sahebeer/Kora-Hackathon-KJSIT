@@ -52,7 +52,7 @@ const Header = () => {
           <div className="w-10 h-10 flex items-center justify-center">
             <img 
               src="/logo.png" 
-              alt="ALvance Logo" 
+              alt="Kora Logo" 
               className="w-full h-full object-contain"
               onError={(e) => {
                 e.target.style.display = 'none';
@@ -61,7 +61,7 @@ const Header = () => {
           </div>
           {/* Logo Text - Hide on small screens */}
           <div className="hidden sm:block">
-            <h1 className="text-xl font-bold text-[#68538C]">ALvance</h1>
+            <h1 className="text-xl font-bold text-[#68538C]">Kora</h1>
             <p className="text-xs text-[#342744]/70 -mt-1">LCA Platform</p>
           </div>
         </div>

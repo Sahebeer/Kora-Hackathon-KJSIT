@@ -92,7 +92,7 @@ function FloatingChatbot() {
           <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-[#68538C] to-[#342744] px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-5 h-5 text-[#FCFAF6]" />
-              <span className="text-[#FCFAF6] font-semibold text-sm">ALVance Assistant</span>
+              <span className="text-[#FCFAF6] font-semibold text-sm">Kora Assistant</span>
             </div>
             <div className="flex gap-2">
               

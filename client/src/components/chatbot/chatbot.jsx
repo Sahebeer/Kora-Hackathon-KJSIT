@@ -10,7 +10,7 @@ function App() {
   const [messages, setMessages] = useState([
     {
       sender: "bot",
-      text: "Welcome to ALVance Assistant! How can I help you?"
+      text: "Welcome to Kora Assistant! How can I help you?"
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);

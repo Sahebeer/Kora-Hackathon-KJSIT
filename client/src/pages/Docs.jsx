@@ -796,7 +796,7 @@ export default function Docs() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-[#342744] mb-4">Documentation</h1>
           <p className="text-lg text-[#342744]/70">
-            Welcome to the ALVance platform documentation
+            Welcome to the Kora platform documentation
           </p>
         </div>
         

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useNavigate } from 'react-router-dom';
-import { Github } from 'lucide-react';
 import ScrollStack, { ScrollStackItem } from '../components/animations/scroll';
 import Plasma from '../components/animations/plasma';
 import ScrambledText from '../components/animations/scrolltext';
@@ -206,9 +205,9 @@ export default function Landing() {
           {/* Logo/Brand - No Background */}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-[#68538C] to-[#342744] rounded-lg flex items-center justify-center border border-[#A996C7]/30 shadow-md">
-              <span className="text-[#FCFAF6] font-bold text-sm">AL</span>
+              <span className="text-[#FCFAF6] font-bold text-sm">KO</span>
             </div>
-            <span className="text-[#FCFAF6] font-bold text-xl tracking-tight">ALVance</span>
+            <span className="text-[#FCFAF6] font-bold text-xl tracking-tight">Kora</span>
           </div>
 
           {/* Navigation Links - Glass Rounded Rectangle */}
@@ -239,20 +238,13 @@ export default function Landing() {
             </button>
           </div>
 
-          {/* GitHub Button - Solid Rounded Box */}
-          <a
-            href="https://github.com/ayanfarooque/SIH69"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-gradient-to-r from-[#68538C] to-[#342744] hover:from-[#342744] hover:to-[#28242A] text-[#FCFAF6] px-4 py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg border border-[#A996C7]/30 cursor-none"
+          {/* Launch App Button - Solid Rounded Box */}
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 bg-gradient-to-r from-[#68538C] to-[#342744] hover:from-[#342744] hover:to-[#28242A] text-[#FCFAF6] px-5 py-2.5 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg border border-[#A996C7]/30 cursor-none"
           >
-            <Github size={18} />
-            <span className="font-semibold text-sm">Visit Our GitHub</span>
-            <div className="flex items-center gap-1 bg-[#C9A96E]/20 px-2 py-0.5 rounded-md border border-[#C9A96E]/40">
-              <span className="text-[#C9A96E]">★</span>
-              <span className="text-xs text-[#FCFAF6]">Star</span>
-            </div>
-          </a>
+            <span className="font-semibold text-sm">Launch App</span>
+          </button>
         </div>
       </header>
 
@@ -280,7 +272,7 @@ export default function Landing() {
               speed={0.6}
               scrambleChars=".:"
             >
-              ALvance
+              Kora
             </ScrambledText>
           </div>
 
@@ -442,9 +434,9 @@ export default function Landing() {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-gradient-to-br from-[#68538C] to-[#342744] rounded-lg flex items-center justify-center border border-[#A996C7]/30 shadow-md">
-                  <span className="text-[#FCFAF6] font-bold">AL</span>
+                  <span className="text-[#FCFAF6] font-bold">KO</span>
                 </div>
-                <span className="text-[#FCFAF6] font-bold text-2xl tracking-tight">ALVance</span>
+                <span className="text-[#FCFAF6] font-bold text-2xl tracking-tight">Kora</span>
               </div>
               <p className="text-white/70 text-sm leading-relaxed">
                 India's first AI-powered LCA platform for comprehensive metal lifecycle analytics.
@@ -515,8 +507,8 @@ export default function Landing() {
               <h3 className="text-[#FCFAF6] font-semibold text-lg">Connect</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="https://github.com/ayanfarooque/SIH69" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-[#C9A96E] transition-colors text-sm cursor-none">
-                    GitHub
+                  <a href="#" className="text-white/70 hover:text-[#C9A96E] transition-colors text-sm cursor-none">
+                    Community
                   </a>
                 </li>
                 <li>
@@ -541,7 +533,7 @@ export default function Landing() {
           {/* Bottom Bar */}
           <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-white/50 text-sm">
-              © 2025 ALVance. All rights reserved.
+              © 2025 Kora. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <a href="#" className="text-white/50 hover:text-[#C9A96E] transition-colors text-sm cursor-none">
