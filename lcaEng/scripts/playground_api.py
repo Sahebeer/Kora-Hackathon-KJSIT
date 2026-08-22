@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import LCA engine components
 from src.engine.main_engine import AluminumLCAEngine
 from src.models.wizard_input_mapper import map_wizard_to_engine_params
+from src.utils.hardening import safe_startup_engine, DummyEngine
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -46,15 +47,17 @@ engine = None
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize LCA engine on startup"""
+    """Initialize LCA engine on startup (fail-safe).
+
+    Use `safe_startup_engine` so the server remains up even when engine
+    initialization fails; a `DummyEngine` fallback will return structured
+    errors to API clients instead of crashing the process.
+    """
     global engine
-    try:
-        logger.info("Initializing Aluminum LCA Engine...")
-        engine = AluminumLCAEngine()
-        logger.info("✓ LCA Engine ready for playground calculations")
-    except Exception as e:
-        logger.error(f"Failed to initialize LCA engine: {e}")
-        raise
+    logger.info("Initializing Aluminum LCA Engine...")
+    engine = safe_startup_engine(lambda: AluminumLCAEngine(), reason_msg="AluminumLCAEngine init failed")
+    if isinstance(engine, DummyEngine):
+        logger.warning("Using DummyEngine fallback; playground calculations will return errors")
 
 
 # Pydantic models for request/response

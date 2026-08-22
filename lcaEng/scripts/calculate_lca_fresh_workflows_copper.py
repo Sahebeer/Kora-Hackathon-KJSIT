@@ -36,6 +36,7 @@ from bson import ObjectId
 
 from src.utils.mongo_client import get_mongo_client
 from src.engine.main_engine import AluminumLCAEngine
+from src.utils.hardening import safe_startup_engine
 from src.utils.copper_field_mapper import map_copper_fields_to_engine
 from src.engine.circularity import (
     extract_sustainability_parameters,
@@ -258,8 +259,8 @@ def main():
     src = db[args.source]
     tgt = db[args.target]
 
-    # Initialize LCA engine
-    engine = AluminumLCAEngine()
+    # Initialize LCA engine (fail-safe)
+    engine = safe_startup_engine(lambda: AluminumLCAEngine(), reason_msg="AluminumLCAEngine init failed")
     
     print(f"\n{'='*70}")
     print(f"🔶 CONTINUOUS COPPER LCA PROCESSING - Running indefinitely")
@@ -390,4 +391,7 @@ def main():
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # Run main under a safe wrapper that retries transient failures
+    from src.utils.hardening import safe_main_wrapper
+
+    raise SystemExit(safe_main_wrapper(main))
