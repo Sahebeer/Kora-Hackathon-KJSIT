@@ -5531,6 +5531,9 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
   const [stepData, setStepData] = useState({});
   const [predicting, setPredicting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isCalculatingLca, setIsCalculatingLca] = useState(false);
+  const [showLCAPromptModal, setShowLCAPromptModal] = useState(false);
+  const [lcaPromptReportId, setLcaPromptReportId] = useState(null);
 
   // Material Source Selection state
   const [materialSource, setMaterialSource] = useState('primary'); // 'primary', 'secondary', or 'mixed'
