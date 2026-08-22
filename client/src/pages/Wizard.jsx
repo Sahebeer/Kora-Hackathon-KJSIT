@@ -196,9 +196,9 @@ export default function Wizard() {
           navigate(`/wizard?id=${id}`, { replace: true });
         }
         
-        // Set active step based on workflow progress
-        const completedCount = response.data.workflow.completedSteps?.length || 0
-        setActiveStep(Math.min(completedCount, steps.length - 1))
+        // Set active step: start at 0 if fully completed so user can review from start, else at current incomplete step
+        const completedCount = response.data.workflow.completedSteps?.length || 0;
+        setActiveStep(completedCount >= 7 ? 0 : Math.min(completedCount, steps.length - 1));
       }
     } catch (err) {
       console.error('❌ Error loading workflow:', err);

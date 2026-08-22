@@ -250,7 +250,13 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
     mode: "onChange",
   });
 
-  const { control, handleSubmit, formState: { isValid } } = form;
+  const { control, handleSubmit, formState: { isValid }, reset } = form;
+
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      reset(initialValues);
+    }
+  }, [JSON.stringify(initialValues), reset]);
 
   const onSubmit = (data) => {
     onSave?.(data);
@@ -969,7 +975,13 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
     mode: "onChange",
   });
 
-  const { control, handleSubmit, formState: { isValid }, watch } = form;
+  const { control, handleSubmit, formState: { isValid }, watch, reset } = form;
+
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      reset(initialValues);
+    }
+  }, [JSON.stringify(initialValues), reset]);
 
   const selectedMineralogy = watch("mineralogyDetails");
 
@@ -1655,7 +1667,13 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
     mode: "onChange",
   });
 
-  const { control, handleSubmit, formState: { isValid }, watch } = form;
+  const { control, handleSubmit, formState: { isValid }, watch, reset } = form;
+
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      reset(initialValues);
+    }
+  }, [JSON.stringify(initialValues), reset]);
 
   const selectedRoute = watch("processRoute");
 
@@ -2397,7 +2415,13 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
     mode: "onChange",
   });
 
-  const { control, handleSubmit, formState: { isValid } } = form;
+  const { control, handleSubmit, formState: { isValid }, reset } = form;
+
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      reset(initialValues);
+    }
+  }, [JSON.stringify(initialValues), reset]);
 
   const handleNext = () => {
     const data = form.getValues();
@@ -2957,7 +2981,13 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
     mode: "onChange",
   });
 
-  const { control, handleSubmit, watch, formState: { isValid } } = form;
+  const { control, handleSubmit, watch, formState: { isValid }, reset } = form;
+
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      reset(initialValues);
+    }
+  }, [JSON.stringify(initialValues), reset]);
 
   const handleNext = () => {
     const data = form.getValues();
@@ -3987,7 +4017,13 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
     mode: "onChange",
   });
 
-  const { control, handleSubmit, formState: { isValid } } = form;
+  const { control, handleSubmit, formState: { isValid }, reset } = form;
+
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      reset(initialValues);
+    }
+  }, [JSON.stringify(initialValues), reset]);
 
   const handleNext = () => {
     const data = form.getValues();
@@ -4960,7 +4996,13 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
     mode: "onChange",
   });
 
-  const { control, handleSubmit, formState: { isValid } } = form;
+  const { control, handleSubmit, formState: { isValid }, reset } = form;
+
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      reset(initialValues);
+    }
+  }, [JSON.stringify(initialValues), reset]);
 
   const handleNext = async () => {
     try {
@@ -5864,6 +5906,7 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
 
     return (
       <Component
+        key={`${currentStepKey}-${workflowId || 'new'}-${JSON.stringify(stepData[currentStepKey] ? Object.keys(stepData[currentStepKey]).length : 0)}`}
         onNext={handleNext}
         onBack={handleBack}
         onSave={handleSave}
