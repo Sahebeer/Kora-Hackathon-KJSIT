@@ -1,0 +1,1354 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { gsap } from 'gsap';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { cn } from '@/lib/utils';
+import {
+  Sparkles,
+  Clock,
+  Zap,
+  Construction,
+  ArrowLeft,
+  NotebookPen,
+  FolderOpen,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
+  FileText,
+  Shield,
+  Recycle,
+  ArrowRight,
+} from 'lucide-react';
+import { getCurrentUser } from '../services/authService';
+import { getWizardWorkflows, getPublicWizardWorkflows } from '../services/wizardService';
+
+export default function MetalSelection({ onSelect }) {
+  const navigate = useNavigate();
+  const { sidebarOpen } = useSidebar();
+  const containerRef = useRef(null);
+  const cardRefs = useRef([]);
+  const actionRefs = useRef([]);
+  const headerRef = useRef(null);
+
+  const [stage, setStage] = useState('metal');
+  const [selectedMetal, setSelectedMetal] = useState(null);
+  const [projectName, setProjectName] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
+  const [openProjectsExpanded, setOpenProjectsExpanded] = useState(false);
+  const [recentProjects, setRecentProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Animate metal cards when stage is "metal"
+  useEffect(() => {
+    if (stage !== 'metal' || !containerRef.current) return;
+
+    const ctx = gsap.context(() => {
+      gsap.set(headerRef.current, { opacity: 0, y: -30 });
+      gsap.set(cardRefs.current, { opacity: 0, y: 60, scale: 0.95 });
+
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+      tl.to(headerRef.current, { opacity: 1, y: 0, duration: 0.8 })
+        .to(
+          cardRefs.current,
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.8,
+            stagger: 0.15,
+          },
+          '-=0.4'
+        );
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [stage]);
+
+  // Animate action panels when stage switches to "action"
+  useEffect(() => {
+    if (stage !== 'action' || !containerRef.current) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        actionRefs.current,
+        { opacity: 0, y: 40, scale: 0.96 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          ease: 'power3.out',
+          stagger: 0.15,
+        }
+      );
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [stage]);
+
+  // Fetch current user and recent projects
+  useEffect(() => {
+    const user = getCurrentUser();
+    setCurrentUser(user);
+    if (user) {
+      const uid = user._id || user.id;
+      // Fetch projects for the selected metal, or all projects if no metal selected yet
+      fetchRecentProjects(uid, selectedMetal);
+    }
+  }, [selectedMetal]);
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      const uid = user._id || user.id;
+      fetchRecentProjects(uid, null); // Fetch all projects initially
+    }
+  }, []);
+
+  // (Reverted) No secondary fetch on action stage; initial mount fetch suffices
+
+  const fetchRecentProjects = async (userId, metal) => {
+    try {
+      setLoadingProjects(true);
+      // Determine backend metalType value
+      let metalTypeFilter = undefined;
+      if (metal === 'aluminum') metalTypeFilter = 'Aluminium';
+      else if (metal === 'copper') metalTypeFilter = 'Copper';
+
+      const response = await getWizardWorkflows({
+        limit: 10,
+        sort: '-updatedAt',
+        metalType: metalTypeFilter,
+      });
+
+      let workflows = response?.data?.workflows || [];
+
+      // Client-side filtering as additional safety
+      if (metalTypeFilter) {
+        workflows = workflows.filter(w => w.metalType === metalTypeFilter);
+      }
+
+      setRecentProjects(workflows);
+    } catch (error) {
+      console.error('Error fetching recent projects:', error);
+      setRecentProjects([]);
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
+  const handleCardHover = (index, isEntering) => {
+    if (stage !== 'metal') return;
+    gsap.to(cardRefs.current[index], {
+      y: isEntering ? -8 : 0,
+      scale: isEntering ? 1.02 : 1,
+      duration: 0.3,
+      ease: 'power2.out',
+    });
+  };
+
+  const handleMetalSelect = (metalType) => {
+    if (metalType !== 'aluminum' && metalType !== 'steel' && metalType !== 'copper' && metalType !== 'zinc' && metalType !== 'lead') return;
+    setSelectedMetal(metalType);
+    setStage('action');
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
+  };
+
+  const playExitAnimation = (callback) => {
+    if (!containerRef.current) {
+      callback?.();
+      return;
+    }
+
+    gsap.to(containerRef.current, {
+      opacity: 0,
+      y: -20,
+      duration: 0.4,
+      ease: 'power2.inOut',
+      onComplete: callback,
+    });
+  };
+
+  const handleCreateSubmit = (event) => {
+    event.preventDefault();
+    if (!projectName.trim()) return;
+
+    const payload = {
+      metal: selectedMetal,
+      mode: 'create',
+      projectName: projectName.trim(),
+      projectDescription: projectDescription.trim(),
+    };
+
+    playExitAnimation(() => onSelect(payload));
+  };
+
+  const handleBackToMetals = () => {
+    setStage('metal');
+    setSelectedMetal(null);
+    setProjectName('');
+    setProjectDescription('');
+    setOpenProjectsExpanded(false);
+    // Fetch all projects when going back to metal selection
+    const user = getCurrentUser();
+    if (user) {
+      const uid = user._id || user.id;
+      fetchRecentProjects(uid, null);
+    }
+  };
+
+  const handleLoadExistingWorkflow = (workflowId) => {
+    // Find the workflow in recentProjects to get its metalType
+    const workflow = recentProjects.find(w => w._id === workflowId);
+    const workflowMetalType = workflow?.metalType;
+    
+    // Determine metal from workflow's metalType, fallback to selectedMetal
+    let metal = selectedMetal || 'aluminum';
+    if (workflowMetalType === 'Copper') metal = 'copper';
+    else if (workflowMetalType === 'Aluminium') metal = 'aluminum';
+    else if (workflowMetalType === 'Steel') metal = 'steel';
+    else if (workflowMetalType === 'Zinc') metal = 'zinc';
+    else if (workflowMetalType === 'Lead') metal = 'lead';
+    
+    const payload = {
+      metal: metal,
+      mode: 'load',
+      workflowId: workflowId
+    };
+    
+    playExitAnimation(() => onSelect(payload));
+  };
+
+  const renderActionStage = () => {
+    const metalConfig = {
+      aluminum: {
+        color: 'stone',
+        label: 'Aluminum',
+        description: 'aluminum workflows',
+        wizardLabel: 'Launch aluminum wizard',
+      },
+      copper: {
+        color: 'clay',
+        label: 'Copper',
+        description: 'copper workflows',
+        wizardLabel: 'Launch copper wizard',
+      },
+      zinc: {
+        color: 'brass',
+        label: 'Zinc',
+        description: 'zinc workflows',
+        wizardLabel: 'Launch zinc wizard',
+      },
+      lead: {
+        color: 'slate',
+        label: 'Lead',
+        description: 'lead workflows',
+        wizardLabel: 'Launch lead wizard',
+      },
+      steel: {
+        color: 'iron',
+        label: 'Steel',
+        description: 'steel workflows',
+        wizardLabel: 'Launch steel wizard',
+      },
+    };
+
+    const colorClasses = {
+      stone: {
+        badge: 'bg-[#68538C]/15 text-[#68538C] border border-[#68538C]/20',
+        text: 'text-[#68538C]',
+        cardBorder: 'border-[#DED6CC] shadow-[0_12px_28px_rgba(104,83,140,0.12)]',
+        iconBg: 'bg-[#68538C]/15 text-[#68538C]',
+        buttonBg: 'bg-[#68538C] hover:bg-[#342744]',
+        focusBorder: 'focus:border-[#68538C] focus:ring-[#A996C7]/20',
+        infoBox: 'bg-[#F5F0E8] border-[#DED6CC] text-[#342744]',
+        drawerBg: 'from-[#FCFAF6] via-[#F5F0E8] to-[#FCFAF6]',
+        drawerGradient: 'from-[#68538C]/15',
+        drawerIconBg: 'bg-[#F5F0E8] text-[#68538C]',
+        drawerText: 'text-[#68538C]',
+        drawerTitle: 'text-[#342744]',
+        drawerPill: 'text-[#68538C]',
+        drawerInfoBox: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerInfoText: 'text-[#342744]',
+        drawerInfoSubtext: 'text-[#342744]/75',
+        drawerCardBg: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerHandle: 'bg-[#DED6CC]',
+        drawerHandleText: 'text-[#68538C]',
+        drawerBorder: 'border-[#DED6CC]',
+        drawerContentText: 'text-[#342744]',
+        drawerChevron: 'text-[#A996C7]',
+        drawerContentSubtext: 'text-[#342744]/70',
+        drawerDashed: 'border-[#DED6CC] bg-[#F5F0E8]',
+        drawerButton: 'border-[#DED6CC] text-[#68538C]',
+        drawerFooter: 'text-[#342744]/70',
+      },
+      clay: {
+        badge: 'bg-[#B87968]/15 text-[#B87968] border border-[#B87968]/20',
+        text: 'text-[#B87968]',
+        cardBorder: 'border-[#DED6CC] shadow-[0_12px_28px_rgba(184,121,104,0.14)]',
+        iconBg: 'bg-[#B87968]/15 text-[#B87968]',
+        buttonBg: 'bg-[#B87968] hover:bg-[#8F5A4D]',
+        focusBorder: 'focus:border-[#B87968] focus:ring-[#B87968]/20',
+        infoBox: 'bg-[#F5F0E8] border-[#DED6CC] text-[#342744]',
+        drawerBg: 'from-[#FCFAF6] via-[#F5F0E8] to-[#FCFAF6]',
+        drawerGradient: 'from-[#B87968]/15',
+        drawerIconBg: 'bg-[#F5F0E8] text-[#B87968]',
+        drawerText: 'text-[#B87968]',
+        drawerTitle: 'text-[#342744]',
+        drawerPill: 'text-[#B87968]',
+        drawerInfoBox: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerInfoText: 'text-[#342744]',
+        drawerInfoSubtext: 'text-[#342744]/75',
+        drawerCardBg: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerHandle: 'bg-[#DED6CC]',
+        drawerHandleText: 'text-[#B87968]',
+        drawerBorder: 'border-[#DED6CC]',
+        drawerContentText: 'text-[#342744]',
+        drawerChevron: 'text-[#B87968]',
+        drawerContentSubtext: 'text-[#342744]/70',
+        drawerDashed: 'border-[#DED6CC] bg-[#F5F0E8]',
+        drawerButton: 'border-[#DED6CC] text-[#B87968]',
+        drawerFooter: 'text-[#342744]/70',
+      },
+      brass: {
+        badge: 'bg-[#C9A96E]/15 text-[#59421A] border border-[#C9A96E]/20',
+        text: 'text-[#59421A]',
+        cardBorder: 'border-[#DED6CC] shadow-[0_12px_28px_rgba(201,169,110,0.12)]',
+        iconBg: 'bg-[#C9A96E]/15 text-[#59421A]',
+        buttonBg: 'bg-[#C9A96E] hover:bg-[#A8884C] text-[#28242A]',
+        focusBorder: 'focus:border-[#C9A96E] focus:ring-[#C9A96E]/15',
+        infoBox: 'bg-[#F5F0E8] border-[#DED6CC] text-[#342744]',
+        drawerBg: 'from-[#FCFAF6] via-[#F5F0E8] to-[#FCFAF6]',
+        drawerGradient: 'from-[#C9A96E]/15',
+        drawerIconBg: 'bg-[#F5F0E8] text-[#59421A]',
+        drawerText: 'text-[#59421A]',
+        drawerTitle: 'text-[#342744]',
+        drawerPill: 'text-[#59421A]',
+        drawerInfoBox: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerInfoText: 'text-[#342744]',
+        drawerInfoSubtext: 'text-[#342744]/75',
+        drawerCardBg: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerHandle: 'bg-[#DED6CC]',
+        drawerHandleText: 'text-[#59421A]',
+        drawerBorder: 'border-[#DED6CC]',
+        drawerContentText: 'text-[#342744]',
+        drawerChevron: 'text-[#C9A96E]',
+        drawerContentSubtext: 'text-[#342744]/70',
+        drawerDashed: 'border-[#DED6CC] bg-[#F5F0E8]',
+        drawerButton: 'border-[#DED6CC] text-[#59421A]',
+        drawerFooter: 'text-[#342744]/70',
+      },
+      slate: {
+        badge: 'bg-[#526B91]/15 text-[#526B91] border border-[#526B91]/20',
+        text: 'text-[#526B91]',
+        cardBorder: 'border-[#DED6CC] shadow-[0_12px_28px_rgba(82,107,145,0.12)]',
+        iconBg: 'bg-[#526B91]/15 text-[#526B91]',
+        buttonBg: 'bg-[#526B91] hover:bg-[#3E5270]',
+        focusBorder: 'focus:border-[#526B91] focus:ring-[#526B91]/15',
+        infoBox: 'bg-[#F5F0E8] border-[#DED6CC] text-[#342744]',
+        drawerBg: 'from-[#FCFAF6] via-[#F5F0E8] to-[#FCFAF6]',
+        drawerGradient: 'from-[#526B91]/15',
+        drawerIconBg: 'bg-[#F5F0E8] text-[#526B91]',
+        drawerText: 'text-[#526B91]',
+        drawerTitle: 'text-[#342744]',
+        drawerPill: 'text-[#526B91]',
+        drawerInfoBox: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerInfoText: 'text-[#342744]',
+        drawerInfoSubtext: 'text-[#342744]/75',
+        drawerCardBg: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerHandle: 'bg-[#DED6CC]',
+        drawerHandleText: 'text-[#526B91]',
+        drawerBorder: 'border-[#DED6CC]',
+        drawerContentText: 'text-[#342744]',
+        drawerChevron: 'text-[#526B91]',
+        drawerContentSubtext: 'text-[#342744]/70',
+        drawerDashed: 'border-[#DED6CC] bg-[#F5F0E8]',
+        drawerButton: 'border-[#DED6CC] text-[#526B91]',
+        drawerFooter: 'text-[#342744]/70',
+      },
+      iron: {
+        badge: 'bg-[#342744]/15 text-[#342744] border border-[#342744]/20',
+        text: 'text-[#342744]',
+        cardBorder: 'border-[#DED6CC] shadow-[0_12px_28px_rgba(52,39,68,0.12)]',
+        iconBg: 'bg-[#342744]/15 text-[#342744]',
+        buttonBg: 'bg-[#342744] hover:bg-[#28242A]',
+        focusBorder: 'focus:border-[#342744] focus:ring-[#342744]/15',
+        infoBox: 'bg-[#F5F0E8] border-[#DED6CC] text-[#342744]',
+        drawerBg: 'from-[#FCFAF6] via-[#F5F0E8] to-[#FCFAF6]',
+        drawerGradient: 'from-[#342744]/15',
+        drawerIconBg: 'bg-[#F5F0E8] text-[#342744]',
+        drawerText: 'text-[#342744]',
+        drawerTitle: 'text-[#342744]',
+        drawerPill: 'text-[#342744]',
+        drawerInfoBox: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerInfoText: 'text-[#342744]',
+        drawerInfoSubtext: 'text-[#342744]/75',
+        drawerCardBg: 'bg-[#FCFAF6] border-[#DED6CC]',
+        drawerHandle: 'bg-[#DED6CC]',
+        drawerHandleText: 'text-[#342744]',
+        drawerBorder: 'border-[#DED6CC]',
+        drawerContentText: 'text-[#342744]',
+        drawerChevron: 'text-[#342744]',
+        drawerContentSubtext: 'text-[#342744]/70',
+        drawerDashed: 'border-[#DED6CC] bg-[#F5F0E8]',
+        drawerButton: 'border-[#DED6CC] text-[#342744]',
+        drawerFooter: 'text-[#342744]/70',
+      },
+    };
+
+    const config = metalConfig[selectedMetal] || metalConfig.aluminum;
+    const colors = colorClasses[config.color] || colorClasses.stone;
+
+    return (
+      <div className="w-full max-w-6xl space-y-6">
+        <div className="flex flex-col gap-3 text-center sm:text-left sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className={`text-xs uppercase tracking-[0.3em] ${colors.text} font-semibold`}>Step 2</p>
+            <h2 className="text-2xl font-bold text-gray-900 mt-1">How would you like to continue?</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Build a fresh {selectedMetal} project or relaunch one you worked on earlier.
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-2">
+            <div className={`flex items-center gap-1.5 rounded-full ${colors.badge} px-3 py-1.5 text-xs`}>
+              <Sparkles className="h-3.5 w-3.5" />
+              {config.label} mode unlocked
+            </div>
+            <Button variant="ghost" onClick={handleBackToMetals} className="text-gray-600 hover:text-gray-900 text-sm">
+              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+              Change metal
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card
+            ref={(el) => (actionRefs.current[0] = el)}
+            className={`rounded-2xl ${colors.cardBorder} bg-white shadow-lg`}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-xl ${colors.iconBg}`}>
+                    <NotebookPen className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className={`text-xs uppercase tracking-[0.4em] ${colors.text} font-semibold`}>
+                      Create
+                    </p>
+                    <CardTitle className="text-xl">New Project</CardTitle>
+                  </div>
+                </div>
+                <span className={`text-xs font-medium ${colors.text}`}>Guided flow</span>
+              </div>
+              <CardDescription className="text-sm text-gray-600 mt-3">
+                Give your project a name and tell us what it's about. We'll prime the wizard with
+                tailored prompts and checkpoints for {config.description}.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <form className="space-y-4" onSubmit={handleCreateSubmit}>
+                <div className="space-y-2">
+                  <label htmlFor="project-name" className="text-sm font-medium text-gray-700">
+                    Project name
+                  </label>
+                  <Input
+                    id="project-name"
+                    placeholder="LCA Wizard - 11/11/2025"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    className="h-12 text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="project-description" className="text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    id="project-description"
+                    rows={4}
+                    placeholder="Wizard based lifecyle assessment"
+                    value={projectDescription}
+                    onChange={(e) => setProjectDescription(e.target.value)}
+                    className={`w-full rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white ${colors.focusBorder} focus:ring-2 px-4 py-3 text-base text-gray-800 transition`}
+                  />
+                </div>
+                <div className={`rounded-2xl ${colors.infoBox} border border-dashed p-4 text-sm`}>
+                  We'll auto-save as you go and sync analytics with your dashboard once the wizard is
+                  complete.
+                </div>
+                <Button
+                  type="submit"
+                  disabled={!projectName.trim()}
+                  className={`w-full h-12 text-base font-semibold ${colors.buttonBg} disabled:bg-gray-300 disabled:text-gray-500`}
+                >
+                  {config.wizardLabel}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <div
+            ref={(el) => (actionRefs.current[1] = el)}
+            className={`rounded-2xl bg-linear-to-br ${colors.drawerBg} shadow-lg relative overflow-hidden`}
+          >
+            <div className={`absolute inset-x-0 top-0 h-24 bg-linear-to-b ${colors.drawerGradient} to-transparent`} />
+            <div className="relative p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-xl ${colors.drawerIconBg} shadow`}>
+                    <FolderOpen className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className={`text-xs uppercase tracking-[0.4em] ${colors.drawerText} font-semibold`}>
+                      Open
+                    </p>
+                    <h3 className={`text-xl font-semibold ${colors.drawerTitle}`}>Recent Projects</h3>
+                  </div>
+                </div>
+                <span className={`text-xs font-medium ${colors.drawerPill}`}>Drag to reveal</span>
+                <span className={`text-sm font-medium ${colors.drawerPill}`}>Your recent {config.label} workflows</span>
+              </div>
+
+              <div className={`rounded-xl ${colors.drawerInfoBox} border p-3`}>
+                <p className={`text-xs ${colors.drawerInfoText} font-medium`}>Pull the drawer down</p>
+                <p className={`text-xs ${colors.drawerInfoSubtext}`}>
+                  We'll surface your previously opened wizard sessions here. No dummy data until you've
+                  actually run projects — just a clean staging area.
+                </p>
+              </div>
+              {currentUser && (
+                <div className={`rounded-2xl ${colors.drawerInfoBox} border p-4`}>
+                  <p className={`text-sm ${colors.drawerInfoText} font-medium`}>Recent {config.label} Projects</p>
+                  <p className={`text-sm ${colors.drawerInfoSubtext}`}>
+                    Select a project below to reopen its wizard workflow.
+                  </p>
+                </div>
+              )}
+
+              <div className={`rounded-3xl border ${colors.drawerBorder} bg-white/80 overflow-hidden`}>
+                <button
+                  type="button"
+                  onClick={() => setOpenProjectsExpanded((prev) => !prev)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
+                >
+                  <div>
+                    <p className={`text-xs font-semibold ${colors.drawerContentText}`}>Local wizard projects</p>
+                    <p className={`text-sm font-semibold ${colors.drawerContentText}`}>Recent {config.label} Workflows</p>
+                    <p className={`text-xs ${colors.drawerContentSubtext}`}>
+                      {recentProjects.length} total
+                    </p>
+                  </div>
+                  {openProjectsExpanded ? (
+                    <ChevronUp className={`h-4 w-4 ${colors.drawerChevron}`} />
+                  ) : (
+                    <ChevronDown className={`h-4 w-4 ${colors.drawerChevron}`} />
+                  )}
+                </button>
+                <div
+                  className={`transition-[max-height] duration-300 ${openProjectsExpanded ? 'max-h-96' : 'max-h-0'} overflow-hidden`}
+                >
+                  <div className={`px-6 pb-6 space-y-3 text-sm ${colors.drawerContentText}`}>
+                    {loadingProjects ? (
+                      <div className="text-center py-4">
+                        <div className="w-4 h-4 border-2 border-[#6B5B59] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <p className="text-xs mt-2">Loading...</p>
+                      </div>
+                    ) : recentProjects.length > 0 ? (
+                      recentProjects.map(project => (
+                        <button
+                          key={project._id}
+                          onClick={() => handleLoadExistingWorkflow(project._id)}
+                          className="w-full text-left p-3 rounded-lg border border-[#E3D7CF] hover:border-[#6B5B59] hover:bg-[#F7F2EE] transition-all group"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#6B5B59]">
+                                {project.name}
+                              </h4>
+                              <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                {project.description || 'No description'}
+                              </p>
+                              <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
+                                <span>{project.completionPercentage || 0}% complete</span>
+                              </div>
+                            </div>
+                            <div className="ml-2 shrink-0">
+                              <div className={`w-2 h-2 rounded-full ${
+                                project.status === 'completed' ? 'bg-green-400' :
+                                project.status === 'submitted' ? 'bg-blue-400' :
+                                project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                              }`} />
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-xs text-gray-500">No recent {config.label.toLowerCase()} workflows</p>
+                        <p className="text-xs text-gray-400 mt-1">Create a project on the left to see it here</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <p className={`text-xs ${colors.drawerFooter}`}>
+                Want this to auto-populate? Connect your wizard history API and hydrate the list with
+                real sessions when they're available.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMetalStage = () => (
+    <>
+      <div ref={headerRef} className="text-center mb-6 space-y-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Choose Your Metal</h1>
+        <p className="text-sm text-gray-600 max-w-2xl mx-auto">
+          Select the metal type for your lifecycle assessment project
+        </p>
+      </div>
+
+      {/* Aluminium */}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl w-full">
+        <div
+          ref={(el) => (cardRefs.current[0] = el)}
+          onMouseEnter={() => handleCardHover(0, true)}
+          onMouseLeave={() => handleCardHover(0, false)}
+          className="cursor-pointer"
+        >
+          <Card className="bg-white border-[#E0D5CC] hover:border-[#6B5B59] hover:shadow-xl transition-all duration-300 h-full group">
+            <CardHeader className="pb-3 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-14 h-14 rounded-xl bg-linear-to-br from-[#E5D9CF] via-[#F7F1EA] to-[#DED2C9] border-2 border-[#CFC2B9] flex items-center justify-center shadow-md relative overflow-hidden">
+                  <div className="absolute inset-0 bg-linear-to-br from-transparent via-white/40 to-transparent"></div>
+                  <Zap className="w-7 h-7 text-[#6B5B59] relative z-10" strokeWidth={2.5} />
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F1EBE5] border border-[#E3D7CF] rounded-full">
+                  <Sparkles className="w-3.5 h-3.5 text-[#6B5B59]" />
+                  <span className="text-xs font-medium text-[#6B5B59]">Available</span>
+                </div>
+              </div>
+              <CardTitle className="text-2xl text-gray-900 mb-1">Aluminum</CardTitle>
+              <CardDescription className="text-gray-600 text-sm">
+                Complete lifecycle assessment for aluminum production and recycling
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-2">
+              <div className="space-y-2 text-gray-700 text-sm">
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
+                  <p className="flex-1">Mining and ore extraction analysis</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
+                  <p className="flex-1">Beneficiation and refining processes</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
+                  <p className="flex-1">Manufacturing and recycling workflows</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
+                  <p className="flex-1">AI-powered predictions and insights</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => handleMetalSelect('aluminum')}
+                className="w-full bg-linear-to-r from-[#6B5B59] to-[#5C4F4B] hover:from-[#5C4F4B] hover:to-[#4F4441] text-white font-semibold py-6 text-lg shadow-md group-hover:shadow-lg transition-all mb-4"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Start with Aluminum
+              </Button>
+              
+              {/* Recent Projects Section */}
+              {currentUser && (
+                <div className="border-t border-[#E3D7CF] pt-4">
+                  <button
+                    onClick={() => setOpenProjectsExpanded(!openProjectsExpanded)}
+                    className="w-full flex items-center justify-between text-left p-2 rounded-lg hover:bg-[#F7F2EE] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#6B5B59]" />
+                      <span className="text-sm font-medium text-[#6B5B59]">Recent Projects</span>
+                      {recentProjects.length > 0 && (
+                        <span className="text-xs bg-[#F1EBE5] text-[#6B5B59] px-2 py-0.5 rounded-full">
+                          {recentProjects.length}
+                        </span>
+                      )}
+                    </div>
+                    {openProjectsExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-[#6B5B59] group-hover:text-[#5C4F4B]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#6B5B59] group-hover:text-[#5C4F4B]" />
+                    )}
+                  </button>
+                  
+                  {openProjectsExpanded && (
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {loadingProjects ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-[#6B5B59] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          <p className="text-xs text-[#6B5B59] mt-2">Loading projects...</p>
+                        </div>
+                      ) : recentProjects.length > 0 ? (
+                        recentProjects.map((project) => (
+                          <button
+                            key={project._id}
+                            onClick={() => handleLoadExistingWorkflow(project._id)}
+                            className="w-full text-left p-3 rounded-lg border border-[#E3D7CF] hover:border-[#6B5B59] hover:bg-[#F7F2EE] transition-all group"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#6B5B59]">
+                                  {project.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {project.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(project.updatedAt).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="w-3 h-3" />
+                                    {project.completionPercentage || 0}% complete
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="ml-2 shrink-0">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  project.status === 'completed' ? 'bg-green-400' :
+                                  project.status === 'submitted' ? 'bg-blue-400' :
+                                  project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                                }`} />
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No recent aluminum projects</p>
+                          <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Copper Card */}
+        <div
+          ref={(el) => (cardRefs.current[1] = el)}
+          onClick={() => handleMetalSelect('copper')}
+          onMouseEnter={() => handleCardHover(1, true)}
+          onMouseLeave={() => handleCardHover(1, false)}
+          className="cursor-pointer"
+        >
+          <Card className="bg-white border-[#EDD8CB] hover:border-[#BA7967] hover:shadow-xl transition-all duration-300 h-full group">
+            <CardHeader className="pb-3 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-14 h-14 rounded-xl bg-linear-to-br from-[#F2E2DA] via-[#F9F0EC] to-[#EDD8CB] border-2 border-[#D9B8A9] flex items-center justify-center shadow-md relative overflow-hidden">
+                  <div className="absolute inset-0 bg-linear-to-br from-transparent via-white/40 to-transparent"></div>
+                  <Construction className="w-7 h-7 text-[#BA7967] relative z-10" strokeWidth={2.5} />
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F5E8E2] border border-[#EDD8CB] rounded-full">
+                  <Sparkles className="w-3.5 h-3.5 text-[#BA7967]" />
+                  <span className="text-xs font-medium text-[#BA7967]">Available</span>
+                </div>
+              </div>
+              <CardTitle className="text-2xl text-gray-900 mb-1">Copper</CardTitle>
+              <CardDescription className="text-gray-600 text-sm">
+                Complete lifecycle assessment for copper production and recycling
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-2">
+              <div className="space-y-2 text-gray-700 text-sm">
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
+                  <p className="flex-1">Mining and ore extraction analysis</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
+                  <p className="flex-1">Beneficiation and refining processes</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
+                  <p className="flex-1">Manufacturing and recycling workflows</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
+                  <p className="flex-1">AI-powered predictions and insights</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => handleMetalSelect('copper')}
+                className="w-full bg-linear-to-r from-[#BA7967] to-[#A86B5C] hover:from-[#A86B5C] hover:to-[#96604F] text-white font-semibold py-6 text-lg shadow-md group-hover:shadow-lg transition-all mb-4"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Start with Copper
+              </Button>
+              
+              {/* Recent Projects Section */}
+              {currentUser && (
+                <div className="border-t border-[#EDD8CB] pt-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenProjectsExpanded(!openProjectsExpanded);
+                    }}
+                    className="w-full flex items-center justify-between text-left p-2 rounded-lg hover:bg-[#F9F0EC] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#BA7967]" />
+                      <span className="text-sm font-medium text-[#BA7967]">Recent Projects</span>
+                      {recentProjects.filter(p => p.metalType === 'Copper').length > 0 && (
+                        <span className="text-xs bg-[#F5E8E2] text-[#BA7967] px-2 py-0.5 rounded-full">
+                          {recentProjects.filter(p => p.metalType === 'Copper').length}
+                        </span>
+                      )}
+                    </div>
+                    {openProjectsExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-[#BA7967] group-hover:text-[#A86B5C]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#BA7967] group-hover:text-[#A86B5C]" />
+                    )}
+                  </button>
+                  
+                  {openProjectsExpanded && (
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {loadingProjects ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-[#BA7967] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          <p className="text-xs text-[#BA7967] mt-2">Loading projects...</p>
+                        </div>
+                      ) : recentProjects.filter(p => p.metalType === 'Copper').length > 0 ? (
+                        recentProjects.filter(p => p.metalType === 'Copper').map((project) => (
+                          <button
+                            key={project._id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLoadExistingWorkflow(project._id);
+                            }}
+                            className="w-full text-left p-3 rounded-lg border border-[#EDD8CB] hover:border-[#BA7967] hover:bg-[#F9F0EC] transition-all group"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#BA7967]">
+                                  {project.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {project.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(project.updatedAt).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="w-3 h-3" />
+                                    {project.completionPercentage || 0}% complete
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="ml-2 shrink-0">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  project.status === 'completed' ? 'bg-green-400' :
+                                  project.status === 'submitted' ? 'bg-blue-400' :
+                                  project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                                }`} />
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No recent copper projects</p>
+                          <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Zinc Card */}
+        <div
+          ref={(el) => (cardRefs.current[2] = el)}
+          onClick={() => navigate('/wizard-zinc')}
+          onMouseEnter={() => handleCardHover(2, true)}
+          onMouseLeave={() => handleCardHover(2, false)}
+          className="cursor-pointer"
+        >
+          <Card className="bg-white border-[#E8E5D9] hover:border-[#B8A87A] hover:shadow-xl transition-all duration-300 h-full group">
+            <CardHeader className="pb-3 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-14 h-14 rounded-xl bg-linear-to-br from-[#F5F3E8] via-[#F9F7ED] to-[#EDE9D9] border-2 border-[#D4C9A9] flex items-center justify-center shadow-md relative overflow-hidden">
+                  <div className="absolute inset-0 bg-linear-to-br from-transparent via-white/40 to-transparent"></div>
+                  <Zap className="w-7 h-7 text-[#B8A87A] relative z-10" strokeWidth={2.5} />
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F7F4E9] border border-[#E8E5D9] rounded-full">
+                  <Sparkles className="w-3.5 h-3.5 text-[#B8A87A]" />
+                  <span className="text-xs font-medium text-[#B8A87A]">Available</span>
+                </div>
+              </div>
+              <CardTitle className="text-2xl text-gray-900 mb-1">Zinc</CardTitle>
+              <CardDescription className="text-gray-600 text-sm">
+                Complete lifecycle assessment for zinc production and recycling
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-2">
+              <div className="space-y-2 text-gray-700 text-sm">
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#B8A87A] mt-1.5" />
+                  <p className="flex-1">Mining and ore extraction analysis</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#B8A87A] mt-1.5" />
+                  <p className="flex-1">Beneficiation and refining processes</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#B8A87A] mt-1.5" />
+                  <p className="flex-1">Manufacturing and recycling workflows</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#B8A87A] mt-1.5" />
+                  <p className="flex-1">AI-powered predictions and insights</p>
+                </div>
+              </div>
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/wizard-zinc');
+                }}
+                className="w-full bg-linear-to-r from-[#B8A87A] to-[#A69968] hover:from-[#A69968] hover:to-[#948756] text-white font-semibold py-6 text-lg shadow-md group-hover:shadow-lg transition-all mb-4"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Start with Zinc
+              </Button>
+              
+              {/* Recent Projects Section */}
+              {currentUser && (
+                <div className="border-t border-[#E8E5D9] pt-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenProjectsExpanded(!openProjectsExpanded);
+                    }}
+                    className="w-full flex items-center justify-between text-left p-2 rounded-lg hover:bg-[#F9F7ED] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#B8A87A]" />
+                      <span className="text-sm font-medium text-[#B8A87A]">Recent Projects</span>
+                      {recentProjects.filter(p => p.metalType === 'Zinc').length > 0 && (
+                        <span className="text-xs bg-[#F7F4E9] text-[#B8A87A] px-2 py-0.5 rounded-full">
+                          {recentProjects.filter(p => p.metalType === 'Zinc').length}
+                        </span>
+                      )}
+                    </div>
+                    {openProjectsExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-[#B8A87A] group-hover:text-[#A69968]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#B8A87A] group-hover:text-[#A69968]" />
+                    )}
+                  </button>
+                  
+                  {openProjectsExpanded && (
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {loadingProjects ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-[#B8A87A] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          <p className="text-xs text-[#B8A87A] mt-2">Loading projects...</p>
+                        </div>
+                      ) : recentProjects.filter(p => p.metalType === 'Zinc').length > 0 ? (
+                        recentProjects.filter(p => p.metalType === 'Zinc').map((project) => (
+                          <button
+                            key={project._id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLoadExistingWorkflow(project._id);
+                            }}
+                            className="w-full text-left p-3 rounded-lg border border-[#E8E5D9] hover:border-[#B8A87A] hover:bg-[#F9F7ED] transition-all group"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#B8A87A]">
+                                  {project.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {project.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(project.updatedAt).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="w-3 h-3" />
+                                    {project.completionPercentage || 0}% complete
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="ml-2 shrink-0">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  project.status === 'completed' ? 'bg-green-400' :
+                                  project.status === 'submitted' ? 'bg-blue-400' :
+                                  project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                                }`} />
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No recent zinc projects</p>
+                          <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lead Card */}
+        <div className="group">
+          <Card 
+            className="relative overflow-hidden border-[#CBD5E1] bg-gradient-to-br from-[#F8FAFC] via-white to-[#F1F5F9] shadow-[0_12px_28px_rgba(71,85,105,0.12)] hover:shadow-[0_20px_40px_rgba(71,85,105,0.16)] transition-all duration-300 cursor-pointer"
+            onClick={() => navigate('/wizard-lead')}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#475569]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            
+            <CardHeader className="relative pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#E2E8F0] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Shield className="w-6 h-6 text-[#475569]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-[#475569] group-hover:text-[#334155] transition-colors">
+                      Lead
+                    </CardTitle>
+                    <p className="text-xs text-[#64748B] mt-0.5">Pb • Industrial metal</p>
+                  </div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-[#475569] animate-pulse" />
+              </div>
+            </CardHeader>
+
+            <CardContent className="relative space-y-4">
+              <p className="text-sm text-[#64748B] leading-relaxed">
+                High-density metal used in batteries, radiation shielding, and industrial applications with excellent recycling potential.
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F1F5F9] text-[#475569]">
+                  <Zap className="w-3 h-3" />
+                  Batteries
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F1F5F9] text-[#475569]">
+                  <Shield className="w-3 h-3" />
+                  Shielding
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F1F5F9] text-[#475569]">
+                  <Recycle className="w-3 h-3" />
+                  95% Recyclable
+                </span>
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  className="w-full bg-[#475569] hover:bg-[#334155] text-white shadow-md hover:shadow-lg transition-all duration-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/wizard-lead');
+                  }}
+                >
+                  Start with Lead
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Recent Projects Section */}
+              {currentUser && (
+                <div className="border-t border-[#CBD5E1] pt-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenProjectsExpanded(!openProjectsExpanded);
+                    }}
+                    className="w-full flex items-center justify-between text-left p-2 rounded-lg hover:bg-[#F1F5F9] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#475569]" />
+                      <span className="text-sm font-medium text-[#475569]">Recent Projects</span>
+                      {recentProjects.filter(p => p.metalType === 'Lead').length > 0 && (
+                        <span className="text-xs bg-[#F1F5F9] text-[#475569] px-2 py-0.5 rounded-full">
+                          {recentProjects.filter(p => p.metalType === 'Lead').length}
+                        </span>
+                      )}
+                    </div>
+                    {openProjectsExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-[#475569] group-hover:text-[#334155]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#475569] group-hover:text-[#334155]" />
+                    )}
+                  </button>
+                  
+                  {openProjectsExpanded && (
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {loadingProjects ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-[#475569] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          <p className="text-xs text-[#475569] mt-2">Loading projects...</p>
+                        </div>
+                      ) : recentProjects.filter(p => p.metalType === 'Lead').length > 0 ? (
+                        recentProjects.filter(p => p.metalType === 'Lead').map((project) => (
+                          <button
+                            key={project._id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLoadExistingWorkflow(project._id);
+                            }}
+                            className="w-full text-left p-3 rounded-lg border border-[#CBD5E1] hover:border-[#475569] hover:bg-[#F8FAFC] transition-all group"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#475569]">
+                                  {project.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {project.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(project.updatedAt).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="w-3 h-3" />
+                                    {project.completionPercentage || 0}% complete
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="ml-2 shrink-0">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  project.status === 'completed' ? 'bg-green-400' :
+                                  project.status === 'submitted' ? 'bg-blue-400' :
+                                  project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                                }`} />
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No recent lead projects</p>
+                          <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Steel Card */}
+        <div className="group">
+          <Card 
+            className="relative overflow-hidden border-[#D1D5DB] bg-gradient-to-br from-[#F9FAFB] via-white to-[#F3F4F6] shadow-[0_12px_28px_rgba(55,65,81,0.12)] hover:shadow-[0_20px_40px_rgba(55,65,81,0.16)] transition-all duration-300 cursor-pointer"
+            onClick={() => navigate('/wizard-steel')}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#374151]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            
+            <CardHeader className="relative pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#E5E7EB] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Construction className="w-6 h-6 text-[#374151]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-[#374151] group-hover:text-[#1F2937] transition-colors">
+                      Steel
+                    </CardTitle>
+                    <p className="text-xs text-[#6B7280] mt-0.5">Fe • Structural metal</p>
+                  </div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-[#374151] animate-pulse" />
+              </div>
+            </CardHeader>
+
+            <CardContent className="relative space-y-4">
+              <p className="text-sm text-[#6B7280] leading-relaxed">
+                World's most used metal for construction, automotive, and infrastructure with excellent strength and recyclability.
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#374151]">
+                  <Construction className="w-3 h-3" />
+                  Construction
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#374151]">
+                  <Zap className="w-3 h-3" />
+                  Automotive
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#374151]">
+                  <Recycle className="w-3 h-3" />
+                  100% Recyclable
+                </span>
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  className="w-full bg-[#374151] hover:bg-[#1F2937] text-white shadow-md hover:shadow-lg transition-all duration-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/wizard-steel');
+                  }}
+                >
+                  Start with Steel
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Recent Projects Section */}
+              {currentUser && (
+                <div className="border-t border-[#D1D5DB] pt-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenProjectsExpanded(!openProjectsExpanded);
+                    }}
+                    className="w-full flex items-center justify-between text-left p-2 rounded-lg hover:bg-[#F3F4F6] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#374151]" />
+                      <span className="text-sm font-medium text-[#374151]">Recent Projects</span>
+                      {recentProjects.filter(p => p.metalType === 'Steel').length > 0 && (
+                        <span className="text-xs bg-[#F3F4F6] text-[#374151] px-2 py-0.5 rounded-full">
+                          {recentProjects.filter(p => p.metalType === 'Steel').length}
+                        </span>
+                      )}
+                    </div>
+                    {openProjectsExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-[#374151] group-hover:text-[#1F2937]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#374151] group-hover:text-[#1F2937]" />
+                    )}
+                  </button>
+                  
+                  {openProjectsExpanded && (
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {loadingProjects ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-[#374151] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          <p className="text-xs text-[#374151] mt-2">Loading projects...</p>
+                        </div>
+                      ) : recentProjects.filter(p => p.metalType === 'Steel').length > 0 ? (
+                        recentProjects.filter(p => p.metalType === 'Steel').map((project) => (
+                          <button
+                            key={project._id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLoadExistingWorkflow(project._id);
+                            }}
+                            className="w-full text-left p-3 rounded-lg border border-[#D1D5DB] hover:border-[#374151] hover:bg-[#F9FAFB] transition-all group"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#374151]">
+                                  {project.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {project.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(project.updatedAt).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="w-3 h-3" />
+                                    {project.completionPercentage || 0}% complete
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="ml-2 shrink-0">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  project.status === 'completed' ? 'bg-green-400' :
+                                  project.status === 'submitted' ? 'bg-blue-400' :
+                                  project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                                }`} />
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No recent steel projects</p>
+                          <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="mt-6 text-center">
+        <p className="text-gray-500 text-xs">More metals coming soon. Stay tuned!</p>
+      </div>
+    </>
+  );
+
+  return (
+    <div 
+      className={cn(
+        "fixed z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4",
+        sidebarOpen ? "left-[260px]" : "left-16",
+        "right-0 top-16 bottom-0"
+      )}
+    >
+      <div
+        ref={containerRef}
+        className="w-full max-w-6xl rounded-3xl bg-white shadow-2xl border border-[#efe4d5] max-h-[85vh] overflow-y-auto"
+      >
+        <div className="relative z-10 flex flex-col items-center justify-center px-6 py-8">
+          {stage === 'metal' ? renderMetalStage() : renderActionStage()}
+        </div>
+      </div>
+    </div>
+  );
+}

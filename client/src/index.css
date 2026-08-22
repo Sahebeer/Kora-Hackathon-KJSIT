@@ -1,0 +1,159 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Royal Mineral Custom Tokens */
+  --color-royal-plum: #68538C;
+  --color-royal-aubergine: #342744;
+  --color-soft-amethyst: #A996C7;
+  --color-champagne-gold: #C9A96E;
+  --color-burnished-copper: #B87968;
+  --color-royal-sapphire: #526B91;
+  --color-sage-jade: #8FAF9A;
+  --color-royal-ivory: #F5F0E8;
+  --color-pearl: #FCFAF6;
+  --color-warm-silver: #DED6CC;
+  --color-obsidian: #28242A;
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #FCFAF6;
+  --foreground: #28242A;
+  --card: #F5F0E8;
+  --card-foreground: #342744;
+  --popover: #FCFAF6;
+  --popover-foreground: #342744;
+  --primary: #68538C;
+  --primary-foreground: #FCFAF6;
+  --secondary: #F5F0E8;
+  --secondary-foreground: #342744;
+  --muted: #F5F0E8;
+  --muted-foreground: #68538C;
+  --accent: #C9A96E;
+  --accent-foreground: #342744;
+  --destructive: #B87968;
+  --border: #DED6CC;
+  --input: #DED6CC;
+  --ring: #A996C7;
+  --chart-1: #B87968;
+  --chart-2: #526B91;
+  --chart-3: #8FAF9A;
+  --chart-4: #C9A96E;
+  --chart-5: #68538C;
+  --sidebar: #F5F0E8;
+  --sidebar-foreground: #342744;
+  --sidebar-primary: #68538C;
+  --sidebar-primary-foreground: #FCFAF6;
+  --sidebar-accent: #F5F0E8;
+  --sidebar-accent-foreground: #68538C;
+  --sidebar-border: #DED6CC;
+  --sidebar-ring: #A996C7;
+}
+
+.dark {
+  --background: #28242A;
+  --foreground: #FCFAF6;
+  --card: #342744;
+  --card-foreground: #FCFAF6;
+  --popover: #342744;
+  --popover-foreground: #FCFAF6;
+  --primary: #68538C;
+  --primary-foreground: #FCFAF6;
+  --secondary: #342744;
+  --secondary-foreground: #FCFAF6;
+  --muted: #342744;
+  --muted-foreground: #A996C7;
+  --accent: #C9A96E;
+  --accent-foreground: #28242A;
+  --destructive: #B87968;
+  --border: rgba(169, 150, 199, 0.2);
+  --input: rgba(169, 150, 199, 0.25);
+  --ring: #A996C7;
+  --chart-1: #B87968;
+  --chart-2: #526B91;
+  --chart-3: #8FAF9A;
+  --chart-4: #C9A96E;
+  --chart-5: #68538C;
+  --sidebar: #28242A;
+  --sidebar-foreground: #FCFAF6;
+  --sidebar-primary: #68538C;
+  --sidebar-primary-foreground: #FCFAF6;
+  --sidebar-accent: #342744;
+  --sidebar-accent-foreground: #A996C7;
+  --sidebar-border: rgba(169, 150, 199, 0.2);
+  --sidebar-ring: #A996C7;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Royal Mineral themed styles for ScrollStack cards */
+.scroll-stack-card {
+  background-color: #68538C; /* Royal Plum */
+  color: #FCFAF6;
+  border: 1px solid rgba(222, 214, 204, 0.3);
+  box-shadow: 0 10px 30px rgba(52, 39, 68, 0.25);
+}
+.dark .scroll-stack-card {
+  background-color: #68538C;
+  border-color: rgba(169, 150, 199, 0.35);
+}
+/* Alternate solid color for every even card */
+.scroll-stack-card:nth-child(even) {
+  background-color: #342744; /* Royal Aubergine */
+}
+.dark .scroll-stack-card:nth-child(even) {
+  background-color: #342744;
+}
+/* Typography inside cards */
+.scroll-stack-card h2 {
+  color: #FCFAF6;
+}
+.scroll-stack-card p {
+  color: rgba(252, 250, 246, 0.9);
+}

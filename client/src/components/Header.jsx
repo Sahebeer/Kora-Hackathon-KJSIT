@@ -1,0 +1,156 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Settings, Bell, User, LogOut, UserCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { cn } from '@/lib/utils';
+import { logout, getCurrentUser } from '@/services/authService';
+import { toast } from 'sonner';
+
+const Header = () => {
+  const navigate = useNavigate();
+  const { sidebarOpen } = useSidebar();
+  const [searchQuery, setSearchQuery] = useState('');
+  const currentUser = getCurrentUser();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    // Handle search functionality here
+    console.log('Searching for:', searchQuery);
+  };
+
+  const handleLogout = () => {
+    toast.success('Logged out successfully', {
+      description: 'You have been logged out successfully.',
+      duration: 2000
+    });
+    
+    setTimeout(() => {
+      logout();
+    }, 500);
+  };
+
+  return (
+    <header 
+      className={cn(
+        "fixed top-0 right-0 z-40 h-16 bg-[#FCFAF6] border-b border-[#DED6CC] transition-all duration-300 ease-out flex items-center justify-between px-4 sm:px-6",
+        sidebarOpen ? "left-[260px]" : "left-16"
+      )}
+    >
+      {/* Logo Section */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Logo Icon */}
+          <div className="w-10 h-10 flex items-center justify-center">
+            <img 
+              src="/logo.png" 
+              alt="ALvance Logo" 
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+          {/* Logo Text - Hide on small screens */}
+          <div className="hidden sm:block">
+            <h1 className="text-xl font-bold text-[#68538C]">ALvance</h1>
+            <p className="text-xs text-[#342744]/70 -mt-1">LCA Platform</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Bar and Actions */}
+      <div className="flex items-center gap-3 sm:gap-4 flex-1 justify-end max-w-2xl">
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="relative flex-1 max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#A996C7]" />
+            <input
+              type="text"
+              placeholder="Search projects, reports..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-[#DED6CC] bg-[#F5F0E8]/70 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A996C7]/30 focus:border-[#68538C] text-[#342744] transition-colors text-sm placeholder:text-[#342744]/50"
+            />
+          </div>
+        </form>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          {/* Notifications */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="relative p-2 hover:bg-[#68538C]/10 text-[#342744] hover:text-[#68538C]"
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            {/* Notification Badge */}
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#C9A96E] rounded-full text-xs"></span>
+          </Button>
+
+          {/* Settings */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-2 hover:bg-[#BA7967]/10 text-gray-600 hover:text-[#BA7967]"
+            title="Settings"
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+
+          {/* Profile/User Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-2 hover:bg-[#BA7967]/10 text-gray-600 hover:text-[#BA7967]"
+                title="Profile"
+              >
+                <User className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{currentUser?.name || 'User'}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {currentUser?.email || 'user@example.com'}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                <UserCircle className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={handleLogout}
+                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
