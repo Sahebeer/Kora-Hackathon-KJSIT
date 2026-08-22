@@ -30,6 +30,8 @@ const ProcessCanvas = ({ initialMetal = 'copper', projectName = 'Untitled Workfl
   const {
     nodes,
     edges,
+    setNodes,
+    setEdges,
     selectedMetal,
     selectedStage,
     selectedNode,
