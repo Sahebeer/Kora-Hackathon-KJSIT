@@ -145,11 +145,11 @@ const Dashboard = () => {
   }, [dashboardData, sortConfig]);
 
   const handleEdit = (projectId) => {
-    window.location.href = `/projects/${projectId}/edit`;
+    window.location.href = `/wizard?id=${projectId}`;
   };
 
   const handleView = (projectId) => {
-    window.location.href = `/projects/${projectId}`;
+    window.location.href = `/analytics?reportId=${projectId}`;
   };
 
   const handleDelete = (projectId) => {
@@ -415,19 +415,22 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedProjects.slice(0, 5).map((project) => (
+                  {sortedProjects.slice(0, 8).map((project) => (
                     <tr 
-                      key={project.id} 
+                      key={project._id || project.id} 
                       className="border-b border-[#DED6CC]/60 hover:bg-[#FCFAF6] transition-colors"
                     >
                       <td className="py-4 px-4 text-sm font-medium text-[#342744]">
                         {project.name}
                       </td>
                       <td className="py-4 px-4 text-sm text-[#342744]/80">
-                        {project.metalType} - {project.processType}
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#BA7967]/15 text-[#BA7967] mr-2">
+                          {project.metalType || 'Copper'}
+                        </span>
+                        {project.processType}
                       </td>
                       <td className="py-4 px-4 text-sm text-[#342744]/70">
-                        {formatDate(project.lastModified)}
+                        {formatDate(project.lastModified || project.updatedAt || project.createdAt)}
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
@@ -443,22 +446,22 @@ const Dashboard = () => {
                       <td className="py-4 px-4">
                         <div className="flex justify-center gap-1">
                           <button
-                            onClick={() => handleView(project.id)}
-                            className="p-2 hover:bg-[#FCFAF6] rounded-lg transition-colors text-[#342744]/70 hover:text-[#68538C]"
-                            title="View"
+                            onClick={() => handleView(project._id || project.id)}
+                            className="p-2 hover:bg-[#FCFAF6] rounded-lg transition-colors text-[#342744]/70 hover:text-[#68538C] cursor-pointer"
+                            title="View Analytics"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleEdit(project.id)}
-                            className="p-2 hover:bg-[#FCFAF6] rounded-lg transition-colors text-[#342744]/70 hover:text-[#68538C]"
-                            title="Edit"
+                            onClick={() => handleEdit(project._id || project.id)}
+                            className="p-2 hover:bg-[#FCFAF6] rounded-lg transition-colors text-[#342744]/70 hover:text-[#68538C] cursor-pointer"
+                            title="Edit in Wizard"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(project.id)}
-                            className="p-2 hover:bg-[#FCFAF6] rounded-lg transition-colors text-[#342744]/70 hover:text-[#B87968]"
+                            onClick={() => handleDelete(project._id || project.id)}
+                            className="p-2 hover:bg-[#FCFAF6] rounded-lg transition-colors text-[#342744]/70 hover:text-[#B87968] cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
