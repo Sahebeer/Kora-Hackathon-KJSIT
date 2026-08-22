@@ -11,6 +11,7 @@ const asyncHandler = require('express-async-handler');
 const path = require('path');
 const CalculateLCA = require('../models/CalculateLCA');
 const WizardWorkflow = require('../models/WizardWorkflow');
+const CopperWorkflow = require('../models/CopperWorkflow');
 const { generateLCAReport, generateFilename } = require('../utils/generateLCAReport');
 
 /**
@@ -444,7 +445,10 @@ const calculateLCA = asyncHandler(async (req, res) => {
     let metalType = 'Aluminium'; // default
     if (workflowId) {
       try {
-        const workflow = await WizardWorkflow.findById(workflowId).select('metalType');
+        let workflow = await WizardWorkflow.findById(workflowId).select('metalType');
+        if (!workflow) {
+          workflow = await CopperWorkflow.findById(workflowId).select('metalType');
+        }
         if (workflow && workflow.metalType) {
           metalType = workflow.metalType;
           console.log('📊 [LCA Calculation] Retrieved metalType from workflow:', metalType);

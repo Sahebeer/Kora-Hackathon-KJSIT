@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { calculateLCA } from "@/services/lcaService";
+import LCAPromptModal from "@/components/LCAPromptModal";
 
 // Typography scale
 const HEADING_TEXT = "text-[22px] sm:text-[24px] md:text-[26px]";
@@ -136,7 +138,7 @@ function StepSection({ stepNumber, badgeLabel, title, description, children, onP
   );
 }
 
-function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true }) {
+function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onCalculateLca, isCalculatingLca }) {
   const handleForwardClick = () => {
     if (typeof onForward === 'function') {
       onForward()
@@ -165,10 +167,14 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
           >
             <Button
               type="button"
-              className="relative overflow-hidden bg-linear-to-r from-[#ef5350] to-[#ff8a65] text-white shadow-md transition-all duration-200 hover:from-[#e53935] hover:to-[#ff7043]"
+              onClick={onCalculateLca}
+              disabled={isCalculatingLca}
+              className="relative overflow-hidden bg-gradient-to-r from-[#ef5350] to-[#ff8a65] text-white shadow-md transition-all duration-200 hover:from-[#e53935] hover:to-[#ff7043] cursor-pointer"
             >
               <span className="absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-200 hover:opacity-100" />
-              <span className="relative">Calculate LCA Score</span>
+              <span className="relative flex items-center gap-2">
+                {isCalculatingLca ? 'Calculating LCA...' : 'Calculate LCA Score'}
+              </span>
             </Button>
           </motion.div>
         )}
@@ -177,7 +183,7 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
             type="button"
             onClick={handleForwardClick}
             disabled={forwardDisabled}
-            className="relative overflow-hidden rounded-full bg-[#BA7967] px-6 py-2 text-white shadow-md transition-all duration-200 hover:bg-[#a86b5c] disabled:cursor-not-allowed disabled:opacity-60"
+            className="relative overflow-hidden rounded-full bg-[#BA7967] px-6 py-2 text-white shadow-md transition-all duration-200 hover:bg-[#a86b5c] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
           >
             {forwardLabel}
             <span className="ml-2">→</span>
@@ -189,7 +195,7 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
 }
 
 // Step 1: Mining
-function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, isCalculatingLca }) {
   const schema = z.object({
     miningMethod: z.string().optional(),
     oreType: z.string().optional(),
@@ -293,7 +299,11 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
     <StepFooterActions
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
+      forwardLabel="Next: Beneficiation"
       forwardDisabled={!isValid}
+      showLca={true}
+      onCalculateLca={() => onCalculateLCA?.(form.getValues())}
+      isCalculatingLca={isCalculatingLca}
     />
   );
 
@@ -921,7 +931,7 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 2: Beneficiation
-function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, isCalculatingLca }) {
   const schema = z.object({
     oreType: z.string().optional(),
     oreGradePercentCu: z.coerce.number().min(0).optional(),
@@ -1031,7 +1041,11 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
     <StepFooterActions
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
+      forwardLabel="Next: Smelting & Refining"
       forwardDisabled={false}
+      showLca={true}
+      onCalculateLca={() => onCalculateLCA?.(form.getValues())}
+      isCalculatingLca={isCalculatingLca}
     />
   );
 
@@ -1610,7 +1624,7 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
 
 // Step 3: Refining
 // Step 3: Extraction (formerly Refining)
-function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, isCalculatingLca }) {
   const schema = z.object({
     processRoute: z.string().optional(),
     oreType: z.string().optional(),
@@ -1716,7 +1730,11 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
     <StepFooterActions
       onBack={onBack}
       onForward={handleNext}
+      forwardLabel="Next: Use Phase"
       forwardDisabled={false}
+      showLca={true}
+      onCalculateLca={() => onCalculateLCA?.(form.getValues())}
+      isCalculatingLca={isCalculatingLca}
     />
   );
 
@@ -2365,7 +2383,7 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
 }
 
 // Step 5: Use Phase
-function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, isCalculatingLca }) {
   const schema = z.object({
     // Product & Application Data
     productType: z.string().optional(),
@@ -2486,8 +2504,11 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
               <StepFooterActions
                 onBack={onBack}
                 onForward={handleNext}
+                forwardLabel="Next: Manufacturing"
                 forwardDisabled={false}
                 showLca={true}
+                onCalculateLca={() => onCalculateLCA?.(form.getValues())}
+                isCalculatingLca={isCalculatingLca}
               />
             }
           >
@@ -2925,7 +2946,7 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
 }
 
 // Step 4: Manufacturing
-function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, isCalculatingLca }) {
   const schema = z.object({
     // Feed and Material Characteristics
     productType: z.string().optional(),
@@ -3020,8 +3041,11 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
               <StepFooterActions
                 onBack={onBack}
                 onForward={handleNext}
+                forwardLabel="Next: Recycling"
                 forwardDisabled={false}
                 showLca={true}
+                onCalculateLca={() => onCalculateLCA?.(form.getValues())}
+                isCalculatingLca={isCalculatingLca}
               />
             }
           >
@@ -3956,7 +3980,7 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
 }
 
 // Step 6: Recycling
-function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, isCalculatingLca }) {
   const schema = z.object({
     // Scrap Collection & Source
     scrapType: z.string().optional(),
@@ -4104,8 +4128,11 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
               <StepFooterActions
                 onBack={onBack}
                 onForward={handleNext}
+                forwardLabel="Next: Valorization"
                 forwardDisabled={false}
-                showLCA={true}
+                showLca={true}
+                onCalculateLca={() => onCalculateLCA?.(form.getValues())}
+                isCalculatingLca={isCalculatingLca}
               />
             }
           >
@@ -4950,7 +4977,7 @@ function CircularCombosModal() {
 }
 
 // Step 7: Valorization
-function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting }) {
+function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, onCalculateLCA, isCalculatingLca }) {
   const schema = z.object({
     // Waste and By-Product Characteristics
     wasteType: z.string().optional(),
@@ -5058,8 +5085,10 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
                 onBack={onBack}
                 onForward={handleNext}
                 forwardDisabled={false}
-                forwardLabel="Submit"
+                forwardLabel="Submit & View Analytics"
                 showLca={true}
+                onCalculateLca={() => onCalculateLCA?.(form.getValues())}
+                isCalculatingLca={isCalculatingLca}
               />
             }
           >
@@ -5867,6 +5896,45 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
     onWorkflowSubmitted?.({ workflow: workflowData });
   };
 
+  const handleCalculateLCA = async (currentFormValues = null) => {
+    setIsCalculatingLca(true);
+    try {
+      const mergedData = { ...stepData };
+      if (currentFormValues) {
+        mergedData[currentStepKey] = currentFormValues;
+      }
+      
+      if (workflowId && currentFormValues) {
+        await handleSave(currentFormValues);
+      }
+
+      const lcaPayload = {
+        workflowId: workflowId,
+        projectName: workflowData?.name || workflowData?.projectName || 'Copper Circular LCA Project',
+        location: workflowData?.location || 'Malanjkhand Complex, Madhya Pradesh, IN',
+        currentStage: currentStepKey,
+        wizardData: mergedData
+      };
+
+      const response = await calculateLCA(lcaPayload);
+      if (response.success) {
+        const repId = response.data?.reportId || response.data?.report?._id || workflowId;
+        setLcaPromptReportId(repId);
+        setShowLCAPromptModal(true);
+        toast.success('📊 LCA Impact Calculation Succeeded!', {
+          description: 'Cradle-to-cradle lifecycle report generated with circularity metrics.'
+        });
+      } else {
+        toast.error(response.message || 'LCA calculation failed');
+      }
+    } catch (err) {
+      console.error('❌ LCA calculation failed:', err);
+      toast.error(err.message || 'Failed to calculate LCA');
+    } finally {
+      setIsCalculatingLca(false);
+    }
+  };
+
   const { Component } = stepComponents[activeStep];
   const currentStep = steps[activeStep];
   const currentStepKey = stepComponents[activeStep].key;
@@ -5913,6 +5981,8 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
         initialValues={stepData[currentStepKey]}
         onGenerateAIPrediction={handleGenerateAIPrediction}
         predicting={predicting}
+        onCalculateLCA={handleCalculateLCA}
+        isCalculatingLca={isCalculatingLca}
         onSubmitSuccess={activeStep === steps.length - 1 ? handleSubmitSuccess : undefined}
         saving={saving}
       />
@@ -6049,6 +6119,14 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
       </div>
       
       {renderStepContent()}
+
+      {showLCAPromptModal && (
+        <LCAPromptModal
+          isOpen={showLCAPromptModal}
+          onClose={() => setShowLCAPromptModal(false)}
+          reportId={lcaPromptReportId}
+        />
+      )}
     </WizardContainer>
   );
 }

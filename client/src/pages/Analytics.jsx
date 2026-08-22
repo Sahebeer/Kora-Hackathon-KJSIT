@@ -4,6 +4,7 @@ import ProjectSelector from '../sections/analytics/ProjectSelector';
 import Header from '../sections/analytics/Header';
 import TabbedDashboard from '../sections/analytics/TabbedDashboard';
 import { getUserLCAReports, getCalculatelcaById } from '../services/lcaService';
+import { getWizardWorkflows } from '../services/wizardService';
 import projectAnalyticsData from '../data/projectAnalytics.json';
 
 /**
@@ -41,12 +42,18 @@ function normalizeAnalyticsProject(raw) {
     });
   }
 
+  const projName =
+    raw.name ||
+    raw.projectName ||
+    raw.workflowName ||
+    'Industrial Lifecycle Project';
+
   const metalType =
-    raw.metalType ||
-    (raw.projectName?.toLowerCase().includes('copper') ? 'Copper' :
-     raw.projectName?.toLowerCase().includes('alum') ? 'Aluminium' :
-     raw.projectName?.toLowerCase().includes('steel') ? 'Steel' :
-     raw.projectName?.toLowerCase().includes('zinc') ? 'Zinc' : 'Copper');
+    (raw.metalType ? raw.metalType.charAt(0).toUpperCase() + raw.metalType.slice(1).toLowerCase() : null) ||
+    (projName.toLowerCase().includes('copper') ? 'Copper' :
+     projName.toLowerCase().includes('alum') ? 'Aluminium' :
+     projName.toLowerCase().includes('steel') ? 'Steel' :
+     projName.toLowerCase().includes('zinc') ? 'Zinc' : 'Copper');
 
   const circScore =
     raw.circularityScore ??
@@ -81,10 +88,10 @@ function normalizeAnalyticsProject(raw) {
     _id: raw._id || raw.projectId || raw.reportId || 'project-default',
     projectId: raw.projectId || raw._id || 'project-default',
     reportId: raw.reportId || raw._id || raw.projectId,
-    projectName: raw.projectName || `${metalType} Lifecycle Project`,
+    projectName: projName,
     metalType: metalType,
-    location: raw.location || raw.geographicAnalysis?.facilities?.[0]?.name || 'Malanjkhand Complex, Madhya Pradesh, IN',
-    timestamp: raw.analysisDate || raw.createdAt || new Date().toISOString(),
+    location: raw.location || raw.geographicAnalysis?.facilities?.[0]?.name || 'Industrial Smelting Complex, IN',
+    timestamp: raw.analysisDate || raw.updatedAt || raw.createdAt || new Date().toISOString(),
     status: raw.status || 'completed',
 
     // Aggregate Environmental KPIs
@@ -358,9 +365,20 @@ export default function Analytics() {
           console.warn('⚠️ Could not fetch live LCA reports, falling back to rich benchmark library:', e.message);
         }
 
-        // Merge without duplicate IDs
+        // 3. Fetch all saved wizard workflows (Copper & Aluminium) so created projects appear immediately!
+        let workflowProjects = [];
+        try {
+          const wfRes = await getWizardWorkflows({ limit: 50 });
+          if (wfRes.success && Array.isArray(wfRes.data?.workflows)) {
+            workflowProjects = wfRes.data.workflows.map(normalizeAnalyticsProject);
+          }
+        } catch (e) {
+          console.warn('⚠️ Could not fetch wizard workflows:', e.message);
+        }
+
+        // Merge: Workflows first, then Live Reports, then Benchmarks without duplicate IDs
         const combinedMap = new Map();
-        [...liveProjects, ...benchmarkProjects].forEach((p) => {
+        [...workflowProjects, ...liveProjects, ...benchmarkProjects].forEach((p) => {
           if (p && p._id && !combinedMap.has(p._id)) {
             combinedMap.set(p._id, p);
           }
