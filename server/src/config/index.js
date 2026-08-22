@@ -103,6 +103,48 @@ Object.freeze(config.jwt);
 let memoryMongoServer = null;
 
 /**
+ * Auto-seed default test users if database is empty
+ */
+async function autoSeedDefaultUsers() {
+  try {
+    const User = require('../models/User');
+    const bcrypt = require('bcryptjs');
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      console.log('[INFO] No users found. Auto-seeding default demo accounts...');
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('password123', salt);
+      
+      const defaultUsers = [
+        {
+          name: 'Hashim Ansari',
+          email: 'hashim@example.com',
+          organization: 'Green Industries Ltd',
+          password: hashedPassword
+        },
+        {
+          name: 'Admin User',
+          email: 'admin@example.com',
+          organization: 'Kora Metallurgy Platform',
+          password: hashedPassword
+        },
+        {
+          name: 'Demo User',
+          email: 'demo@example.com',
+          organization: 'Aluminium Dynamics',
+          password: hashedPassword
+        }
+      ];
+
+      await User.insertMany(defaultUsers);
+      console.log('[INFO] Default demo users seeded successfully (hashim@example.com, admin@example.com, demo@example.com / password: password123)');
+    }
+  } catch (seedErr) {
+    console.warn('[WARN] Auto-seeding users skipped:', seedErr.message);
+  }
+}
+
+/**
  * Connect to MongoDB
  * @returns {Promise<void>}
  */
@@ -114,20 +156,31 @@ async function connectDB() {
     socketTimeoutMS: 45000,
   };
 
+  // 1. Try standard connection (e.g. system MongoDB)
   try {
     await mongoose.connect(config.mongoUri, options);
     console.log('[INFO] MongoDB connected successfully');
     console.log(`[INFO] Database: ${mongoose.connection.name}`);
+    await autoSeedDefaultUsers();
+    return;
   } catch (error) {
     if (config.nodeEnv !== 'production' && (config.mongoUri.includes('localhost') || config.mongoUri.includes('127.0.0.1'))) {
-      console.log('[INFO] Local MongoDB not detected. Starting embedded development database...');
+      console.log('[INFO] Local MongoDB service not active. Starting embedded development database...');
+      
+      const fs = require('fs');
+      const path = require('path');
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      const dbPath = path.join(__dirname, '../../.mongo-data');
+
+      // 2. Try persistent embedded instance
       try {
-        const fs = require('fs');
-        const path = require('path');
-        const { MongoMemoryServer } = require('mongodb-memory-server');
-        const dbPath = path.join(__dirname, '../../.mongo-data');
         fs.mkdirSync(dbPath, { recursive: true });
-        
+        // Remove stale lock file if previous process was abruptly terminated
+        const lockFile = path.join(dbPath, 'mongod.lock');
+        if (fs.existsSync(lockFile)) {
+          try { fs.unlinkSync(lockFile); } catch (e) { /* ignore */ }
+        }
+
         memoryMongoServer = await MongoMemoryServer.create({
           instance: {
             port: 27017,
@@ -137,13 +190,32 @@ async function connectDB() {
         });
         const memUri = memoryMongoServer.getUri();
         await mongoose.connect(`${memUri}sih69`, options);
-        console.log('[INFO] Embedded development MongoDB connected successfully');
+        console.log('[INFO] Embedded persistent MongoDB connected successfully');
         console.log(`[INFO] Database: ${mongoose.connection.name}`);
+        await autoSeedDefaultUsers();
         return;
       } catch (memError) {
-        console.error('[ERROR] Embedded MongoDB startup failed:', memError.message);
+        console.warn('[WARN] Persistent embedded MongoDB on 27017 failed, falling back to dynamic in-memory MongoDB:', memError.message);
+      }
+
+      // 3. Guaranteed fallback: Dynamic In-Memory MongoDB
+      try {
+        memoryMongoServer = await MongoMemoryServer.create({
+          instance: {
+            dbName: 'sih69'
+          }
+        });
+        const memUri = memoryMongoServer.getUri();
+        await mongoose.connect(memUri, options);
+        console.log('[INFO] Dynamic in-memory MongoDB connected successfully');
+        console.log(`[INFO] Database: ${mongoose.connection.name}`);
+        await autoSeedDefaultUsers();
+        return;
+      } catch (dynamicErr) {
+        console.error('[ERROR] Dynamic MongoDB startup failed:', dynamicErr.message);
       }
     }
+
     console.error('[ERROR] MongoDB connection failed:', error.message);
     throw error;
   }
