@@ -656,13 +656,12 @@ export default function AlchemyLab() {
   const [selectedMetal, setSelectedMetal] = useState('aluminium');
   const [canvasItems, setCanvasItems] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [draggedItem, setDraggedItem] = useState(null);
-  const [collapsedCategories, setCollapsedCategories] = useState({});
+  const [openCategories, setOpenCategories] = useState({});
 
   const toggleCategory = (category) => {
-    setCollapsedCategories(prev => ({
+    setOpenCategories(prev => ({
       ...prev,
-      [category]: !prev[category]
+      [category]: prev[category] === false ? true : false
     }));
   };
 
@@ -788,7 +787,7 @@ export default function AlchemyLab() {
                         </div>
 
                         {/* Category Items */}
-                        {openCategories[category] && (
+                        {openCategories[category] !== false && (
                           <div className="p-2 flex flex-col gap-2">
                             {items.map(item => (
                               <div
