@@ -41,11 +41,11 @@ async function connectDB() {
  */
 async function clearData() {
   try {
-    await User.deleteMany({});
+    // Keep users to preserve references
     await Project.deleteMany({});
     await Insight.deleteMany({});
     await Benchmark.deleteMany({});
-    console.log('✓ Existing data cleared');
+    console.log('✓ Existing projects, insights, and benchmarks cleared');
   } catch (error) {
     console.error('✗ Failed to clear data:', error.message);
     throw error;
@@ -56,58 +56,42 @@ async function clearData() {
  * Create mock users
  */
 async function createUsers() {
-  const users = [
-    {
+  const createdUsers = [];
+  
+  // Find or create Hashim Ansari
+  let hashim = await User.findOne({ email: 'hashim@example.com' });
+  if (!hashim) {
+    const hashedPassword = await bcrypt.hash('password123', 10);
+    hashim = await User.create({
+      _id: new mongoose.Types.ObjectId('6a8979d5d20d37be55903376'),
       name: 'Hashim Ansari',
       email: 'hashim@example.com',
       organization: 'Green Industries Ltd',
       role: 'manager',
       subscription: 'pro',
-      password: 'password123'
-    },
-    {
-      name: 'Sarah Johnson',
-      email: 'sarah@example.com',
-      organization: 'Circular Economy Corp',
-      role: 'engineer',
-      subscription: 'pro',
-      password: 'password123'
-    },
-    {
-      name: 'Michael Chen',
-      email: 'michael@example.com',
-      organization: 'Sustainability Solutions',
-      role: 'researcher',
-      subscription: 'enterprise',
-      password: 'password123'
-    },
-    {
-      name: 'Emma Wilson',
-      email: 'emma@example.com',
-      organization: 'Environmental Consultants',
-      role: 'policymaker',
-      subscription: 'basic',
-      password: 'password123'
-    },
-    {
-      name: 'David Kumar',
-      email: 'david@example.com',
-      organization: 'Metal Recycling Inc',
-      role: 'engineer',
-      subscription: 'pro',
-      password: 'password123'
-    }
+      password: hashedPassword
+    });
+  }
+  createdUsers.push(hashim);
+
+  // Find or create other users
+  const otherUsers = [
+    { name: 'Sarah Johnson', email: 'sarah@example.com', organization: 'Circular Economy Corp', role: 'engineer', subscription: 'pro' },
+    { name: 'Michael Chen', email: 'michael@example.com', organization: 'Sustainability Solutions', role: 'researcher', subscription: 'enterprise' },
+    { name: 'Emma Wilson', email: 'emma@example.com', organization: 'Environmental Consultants', role: 'policymaker', subscription: 'basic' },
+    { name: 'David Kumar', email: 'david@example.com', organization: 'Metal Recycling Inc', role: 'engineer', subscription: 'pro' }
   ];
 
-  const hashedUsers = await Promise.all(
-    users.map(async (user) => {
-      const hashedPassword = await bcrypt.hash(user.password, 10);
-      return { ...user, password: hashedPassword };
-    })
-  );
+  for (const u of otherUsers) {
+    let existing = await User.findOne({ email: u.email });
+    if (!existing) {
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      existing = await User.create({ ...u, password: hashedPassword });
+    }
+    createdUsers.push(existing);
+  }
 
-  const createdUsers = await User.insertMany(hashedUsers);
-  console.log(`✓ Created ${createdUsers.length} users`);
+  console.log(`✓ Preserved/Created ${createdUsers.length} users`);
   return createdUsers;
 }
 

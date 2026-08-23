@@ -18,18 +18,27 @@ export default function LinearCircularSummary({ selectedProject }) {
     const circularityComponents = selectedProject.circularityComponents || null;
 
     const totalGWP = selectedProject.totalGWP || 0;
-    const gwpLinear = totalGWP;
-    const gwpCircular = gwpLinear * (1 - circularityIndex);
+    // The calculated GWP represents the current (circular) built pathway.
+    // The linear baseline represents the purely linear (virgin) alternative.
+    // If the project is circular, the linear baseline must be scaled UP.
+    const gwpCircular = totalGWP;
+    const gwpLinear = circularityIndex < 1 
+        ? gwpCircular / (1 - circularityIndex * 0.6) 
+        : gwpCircular * 2.5; 
     const gwpReduction = gwpLinear > 0 ? ((gwpLinear - gwpCircular) / gwpLinear) * 100 : 0;
 
     const totalEnergy = selectedProject.totalEnergy || 0;
-    const energyLinear = totalEnergy;
-    const energyCircular = energyLinear * (1 - circularityIndex * 0.5);
+    const energyCircular = totalEnergy;
+    const energyLinear = circularityIndex < 1
+        ? energyCircular / (1 - circularityIndex * 0.5)
+        : energyCircular * 2.0;
     const energyReduction = energyLinear > 0 ? ((energyLinear - energyCircular) / energyLinear) * 100 : 0;
 
     const totalWater = selectedProject.totalWater || 0;
-    const waterLinear = totalWater;
-    const waterCircular = waterLinear * (1 - circularityIndex * 0.4);
+    const waterCircular = totalWater;
+    const waterLinear = circularityIndex < 1
+        ? waterCircular / (1 - circularityIndex * 0.4)
+        : waterCircular * 1.6;
     const waterReduction = waterLinear > 0 ? ((waterLinear - waterCircular) / waterLinear) * 100 : 0;
 
     return (

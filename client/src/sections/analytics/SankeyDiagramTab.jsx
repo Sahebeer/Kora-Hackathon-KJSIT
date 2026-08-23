@@ -16,38 +16,25 @@ export default function SankeyDiagramTab({ selectedProject }) {
     // Extract sankeyData from selectedProject
     let sankeyData = selectedProject.sankeyData;
 
-    // Use dummy data if sankeyData is not available (for backwards compatibility)
+    // Use empty/insufficient data state if sankeyData is not available
     if (!sankeyData || !sankeyData.nodes || sankeyData.nodes.length === 0) {
-        console.warn('⚠️ No sankeyData found in selectedProject. Using demo data.');
-        sankeyData = {
-            normalizationBasisTonnes: 1,
-            nodes: [
-                "Primary Production",
-                "Recycling Input",
-                "Manufacturing",
-                "Manufacturing Scrap",
-                "Product Use",
-                "Post-use Collection",
-                "Recycling Plant",
-                "Valorization",
-                "Landfill / Losses"
-            ],
-            links: [
-                { source: 0, target: 2, value: 0.7 },
-                { source: 1, target: 2, value: 0.3 },
-                { source: 2, target: 3, value: 0.1 },
-                { source: 2, target: 4, value: 0.9 },
-                { source: 3, target: 6, value: 0.08 },
-                { source: 3, target: 8, value: 0.02 },
-                { source: 4, target: 5, value: 0.7 },
-                { source: 4, target: 8, value: 0.2 },
-                { source: 5, target: 6, value: 0.5 },
-                { source: 5, target: 8, value: 0.2 },
-                { source: 6, target: 1, value: 0.58 },
-                { source: 8, target: 7, value: 0.1 },
-                { source: 8, target: 8, value: 0.32 }
-            ]
-        };
+        return (
+            <div className="sankey-diagram-tab p-6 space-y-6">
+                <div className="mb-6">
+                    <h2 className="text-3xl font-bold text-[#342744] mb-2">Material Flow Diagram</h2>
+                    <p className="text-[#342744]/70">Visualizing material circularity and process inputs/outputs</p>
+                </div>
+                <div className="bg-[#F5F0E8] rounded-xl shadow-xs border border-[#DED6CC] p-12 text-center">
+                    <svg className="w-16 h-16 text-[#A996C7]/60 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-[#342744] mb-2">Material Flow Diagram Unavailable</h3>
+                    <p className="text-[#342744]/70">
+                        A dynamic material flow diagram requires complete process stage inputs. Once you complete the wizard and calculate your LCA report, the flow map will generate automatically.
+                    </p>
+                </div>
+            </div>
+        );
     }
 
     // Convert the calculatelca format to the SankeyDiagram component format

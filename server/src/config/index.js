@@ -156,6 +156,8 @@ async function autoSeedDemoWorkflows() {
     const CopperWorkflow = require('../models/CopperWorkflow');
     const WizardWorkflow = require('../models/WizardWorkflow');
     const Report = require('../models/Report');
+    const Project = require('../models/Project');
+    const CalculateLCA = require('../models/CalculateLCA');
 
     const defaultUser = await User.findOne({ email: 'hashim@example.com' }) || await User.findOne();
     if (!defaultUser) return;
@@ -270,7 +272,36 @@ async function autoSeedDemoWorkflows() {
           slagReuseAsConstruction: 85.0,
           acidProduced: 1850,
           revenueFromByProducts: 8400000
+        },
+        calculatedResults: {
+          totalGWP: 2140,
+          totalWaterUsage: 2.4,
+          totalWasteGenerated: 950,
+          totalEnergyRequired: 12500,
+          circularityScore: 80.0,
+          environmentalRating: 'excellent',
+          calculatedAt: new Date()
         }
+      });
+
+      // Linked Project
+      await Project.create({
+        name: 'Malanjkhand Copper Smelting & Circularity Project',
+        description: 'Complete 7-stage LCA simulation of Malanjkhand chalcopyrite extraction, flash smelting, and circular slag valorization.',
+        metalType: 'Copper',
+        processType: 'Pyrometallurgical Flash Smelting & Refining',
+        userId: defaultUser._id,
+        owner: defaultUser._id,
+        status: 'completed',
+        circularityScore: 80.0,
+        gwp: 2140,
+        gwpSaved: 2680,
+        co2Emissions: 2140,
+        energyConsumption: 12500,
+        waterUsage: 2.4,
+        wasteGenerated: 950,
+        recyclingRate: 80.0,
+        wizardWorkflowId: copperDoc._id
       });
 
       // Linked Report
@@ -303,6 +334,50 @@ async function autoSeedDemoWorkflows() {
           isCompleted: true
         }
       });
+      // Linked CalculateLCA
+      await CalculateLCA.create({
+        userId: defaultUser._id,
+        workflowId: copperDoc._id,
+        projectName: 'Malanjkhand Copper Smelting & Circularity Project',
+        location: 'Madhya Pradesh, India',
+        metalType: 'Copper',
+        status: 'completed',
+        totalEnergyConsumption: 12500,
+        totalCO2Emissions: 2140,
+        totalWaterUsage: 2.4,
+        totalWasteGeneration: 950,
+        energyIntensity: 12.5,
+        carbonIntensity: 2.14,
+        circularityScore: 80.0,
+        materialRecoveryRate: 80.0,
+        pdfReportUrl: '/uploads/lca-reports/copper-demo.pdf',
+        pdfFilename: 'copper-demo.pdf',
+        pdfFileSize: 102400,
+        analysisDate: new Date(),
+        stageData: [
+          {
+            stageName: 'mining',
+            stageNumber: 1,
+            completed: true,
+            energyConsumption: 450,
+            co2Emissions: 58.4,
+            waterUsage: 1.2,
+            wasteGeneration: 920,
+            parameters: {}
+          },
+          {
+            stageName: 'beneficiation',
+            stageNumber: 2,
+            completed: true,
+            energyConsumption: 325,
+            co2Emissions: 31.2,
+            waterUsage: 1.8,
+            wasteGeneration: 0,
+            parameters: {}
+          }
+        ]
+      });
+
       console.log('[INFO] Copper demo project & report seeded successfully');
     }
 
@@ -357,7 +432,36 @@ async function autoSeedDemoWorkflows() {
           wasteTypes: ['red_mud', 'dross'],
           valorizationMethods: ['cement_additive', 'dross_recovery'],
           wasteUtilizationPercentages: 72
+        },
+        calculatedResults: {
+          totalGWP: 1650,
+          totalWaterUsage: 1.4,
+          totalWasteGenerated: 1250,
+          totalEnergyRequired: 18500,
+          circularityScore: 74.5,
+          environmentalRating: 'good',
+          calculatedAt: new Date()
         }
+      });
+
+      // Linked Project
+      await Project.create({
+        name: 'Odisha Integrated Aluminium Complex',
+        description: '7-stage ISO 14040/44 LCA of Bauxite mining, Bayer refining, and Hall-Héroult smelting in Odisha.',
+        metalType: 'Aluminium',
+        processType: 'Bayer-Hall Héroult Smelting',
+        userId: defaultUser._id,
+        owner: defaultUser._id,
+        status: 'completed',
+        circularityScore: 74.5,
+        gwp: 1650,
+        gwpSaved: 5200,
+        co2Emissions: 1650,
+        energyConsumption: 18500,
+        waterUsage: 1.4,
+        wasteGenerated: 1250,
+        recyclingRate: 35.0,
+        wizardWorkflowId: alumDoc._id
       });
 
       // Linked Report
@@ -390,6 +494,40 @@ async function autoSeedDemoWorkflows() {
           isCompleted: true
         }
       });
+      // Linked CalculateLCA
+      await CalculateLCA.create({
+        userId: defaultUser._id,
+        workflowId: alumDoc._id,
+        projectName: 'Odisha Integrated Aluminium Complex',
+        location: 'Odisha, India',
+        metalType: 'Aluminium',
+        status: 'completed',
+        totalEnergyConsumption: 18500,
+        totalCO2Emissions: 1650,
+        totalWaterUsage: 1.4,
+        totalWasteGeneration: 1250,
+        energyIntensity: 18.5,
+        carbonIntensity: 1.65,
+        circularityScore: 74.5,
+        materialRecoveryRate: 74.5,
+        pdfReportUrl: '/uploads/lca-reports/aluminium-demo.pdf',
+        pdfFilename: 'aluminium-demo.pdf',
+        pdfFileSize: 102400,
+        analysisDate: new Date(),
+        stageData: [
+          {
+            stageName: 'mining',
+            stageNumber: 1,
+            completed: true,
+            energyConsumption: 580,
+            co2Emissions: 62.4,
+            waterUsage: 1.4,
+            wasteGeneration: 1250,
+            parameters: {}
+          }
+        ]
+      });
+
       console.log('[INFO] Aluminium demo project & report seeded successfully');
     }
   } catch (err) {

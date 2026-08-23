@@ -83,6 +83,27 @@ export default function GeographicAnalysis({ mode, selectedProject }) {
     const routes = geoData.transportationRoutes || [];
     const regionalImpacts = geoData.regionalImpacts || [];
 
+    if (facilities.length === 0) {
+        return (
+            <div className="geographic-analysis p-6 space-y-6">
+                <div className="mb-6">
+                    <h2 className="text-3xl font-bold text-[#342744] mb-2">Geographic Analysis</h2>
+                    <p className="text-[#342744]/70">Geospatial footprint mapping and regional transport impact analysis</p>
+                </div>
+                <div className="bg-[#F5F0E8] rounded-xl shadow-xs border border-[#DED6CC] p-12 text-center">
+                    <svg className="w-16 h-16 text-[#A996C7]/60 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-[#342744] mb-2">Geographic Footprint Unavailable</h3>
+                    <p className="text-[#342744]/70">
+                        This project does not contain explicit facility coordinates or transportation routes. Complete the geographic properties in the wizard to view the geospatial analysis.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     // Calculate map center from facilities
     const mapCenter = geoData.coordinates 
         ? [geoData.coordinates.latitude, geoData.coordinates.longitude]

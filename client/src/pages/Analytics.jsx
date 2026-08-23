@@ -16,31 +16,83 @@ function normalizeAnalyticsProject(raw) {
 
   const linear = raw.linearModel || {};
   const circular = raw.circularModel || {};
-  const prodStages = raw.productionStages || [];
+  
+  // 1. Determine if this is a benchmark project or a real database project
+  const isBenchmark = raw.projectId && String(raw.projectId).startsWith('CVMP');
 
-  // Stage dictionary for ProcessStages & DetailedReports
-  const stagesObj = raw.stages || {};
-  if (prodStages.length > 0) {
-    prodStages.forEach((s) => {
-      const key = s.stageName || `stage_${s.stageNumber}`;
-      if (!stagesObj[key]) {
-        stagesObj[key] = {
-          energyConsumption: s.energyInput || 0,
-          co2Emissions: s.emissions || 0,
-          waterUsage: (s.waterInput ? s.waterInput / 100000 : 0.8),
-          wasteGeneration: s.wasteOutput || 0,
-          yieldEfficiency: s.yieldEfficiency || 85,
-          processEfficiency: s.processEfficiency || 84,
-          operatingCost: s.operatingCost || 18000000,
-          capitalCost: s.capitalCost || 45000000,
-          maintenanceCost: s.maintenanceCost || 3500000,
-          expectedSavings: s.expectedSavings || 3200000,
-          optimizationPotential: s.optimizationPotential || 15,
-          completed: true,
-        };
-      }
-    });
+  // 2. Extract stage-wise data
+  let prodStages = [];
+  if (isBenchmark) {
+    prodStages = raw.productionStages || [];
+  } else {
+    // Real database workflow / calculateLCA report
+    const dbStages = raw.productionStages || raw.lcaStages || raw.stageData || [];
+    if (dbStages.length > 0) {
+      prodStages = dbStages;
+    } else {
+      // Extract from WizardWorkflow direct properties (mining, beneficiation, etc.)
+      const possibleStages = [
+        { name: 'mining', val: raw.mining || raw.copperMining, num: 1 },
+        { name: 'beneficiation', val: raw.beneficiation || raw.copperBeneficiation, num: 2 },
+        { name: 'refining', val: raw.refining || raw.copperRefining, num: 3 },
+        { name: 'smelting', val: raw.smelting, num: 4 },
+        { name: 'manufacturing', val: raw.manufacturing || raw.copperManufacturing, num: 5 },
+        { name: 'recycling', val: raw.recycling || raw.copperRecycling, num: 6 },
+        { name: 'valorization', val: raw.valorization || raw.copperValorization, num: 7 }
+      ];
+      
+      possibleStages.forEach((stage) => {
+        if (stage.val && (stage.val.completed || stage.val.markCompleted || Object.keys(stage.val).length > 2)) {
+          prodStages.push({
+            stageName: stage.name,
+            stageNumber: stage.num,
+            completed: true,
+            energyConsumption: stage.val.energyConsumption || stage.val.electricityConsumption || stage.val.fuelConsumption || 0,
+            co2Emissions: stage.val.co2Emissions || stage.val.directGhgEmissions || stage.val.ghgEmissionsKgCo2ePerTonne || 0,
+            waterUsage: stage.val.waterUsage || stage.val.waterConsumption || stage.val.waterConsumptionM3PerTonne || 0,
+            wasteGeneration: stage.val.wasteGeneration || stage.val.wasteGenerated || stage.val.tailingsProducedTonnePerTonne || 0,
+            parameters: stage.val
+          });
+        }
+      });
+    }
   }
+
+  // 3. Build stage dictionary for ProcessStages & DetailedReports
+  const stagesObj = {};
+  prodStages.forEach((s) => {
+    const key = s.stageName || `stage_${s.stageNumber}`;
+    if (key) {
+      const params = s.parameters || s;
+      
+      // Calculate dynamic operating cost if available
+      let operatingCost = null;
+      if (params.miningCost) operatingCost = params.miningCost;
+      else if (params.maintenanceCost) operatingCost = params.maintenanceCost * 0.8;
+      
+      stagesObj[key] = {
+        energyConsumption: s.energyConsumption ?? s.energyInput ?? 0,
+        co2Emissions: s.co2Emissions ?? s.emissions ?? 0,
+        waterUsage: s.waterUsage ?? (s.waterInput ? s.waterInput / 100000 : 0),
+        wasteGeneration: s.wasteGeneration ?? s.wasteOutput ?? 0,
+        airQualityImpact: s.airQualityImpact ?? 0,
+        
+        // Dynamic efficiency metrics derived from user inputs where possible
+        yieldEfficiency: params.oreRecovery || params.recoveryEfficiencyPercent || params.recoveryEfficiency || (isBenchmark ? s.yieldEfficiency : null),
+        processEfficiency: params.equipmentAvailabilityPercent || params.thickenerEfficiencyPercent || (isBenchmark ? s.processEfficiency : null),
+        energyEfficiency: params.energyEfficiency || (isBenchmark ? s.energyEfficiency : null),
+        waterEfficiency: params.waterReuseRate || params.waterRecycledPercent || (isBenchmark ? s.waterEfficiency : null),
+        
+        operatingCost: operatingCost || (isBenchmark ? s.operatingCost : null),
+        capitalCost: isBenchmark ? s.capitalCost : null,
+        maintenanceCost: isBenchmark ? s.maintenanceCost : null,
+        expectedSavings: isBenchmark ? s.expectedSavings : null,
+        optimizationPotential: params.optimizationPotential || (isBenchmark ? s.optimizationPotential : null),
+        completed: s.completed ?? true,
+        parameters: params
+      };
+    }
+  });
 
   const projName =
     raw.name ||
@@ -55,34 +107,93 @@ function normalizeAnalyticsProject(raw) {
      projName.toLowerCase().includes('steel') ? 'Steel' :
      projName.toLowerCase().includes('zinc') ? 'Zinc' : 'Copper');
 
+  // Primary circularity score extraction
   const circScore =
     raw.circularityScore ??
+    raw.calculatedResults?.circularityScore ??
     circular.materialCircularity ??
     raw.circularityIndex ??
-    80;
+    (isBenchmark ? 80 : 0);
 
   const totalGWP =
     raw.totalCO2Emissions ??
     raw.totalGWP ??
+    raw.calculatedResults?.totalGWP ??
     circular.totalEmissions ??
-    620000;
+    (isBenchmark ? 620000 : 0);
 
   const totalEnergy =
     raw.totalEnergyConsumption ??
     raw.totalEnergy ??
+    raw.calculatedResults?.totalEnergyRequired ??
     circular.energyConsumption ??
-    950000;
+    (isBenchmark ? 950000 : 0);
 
   const totalWater =
     raw.totalWaterUsage ??
     raw.totalWater ??
-    (circular.waterConsumption ? circular.waterConsumption / 100000 : 18);
+    raw.calculatedResults?.totalWaterUsage ??
+    (circular.waterConsumption ? circular.waterConsumption / 100000 : (isBenchmark ? 18 : 0));
 
   const totalWaste =
     raw.totalWasteGeneration ??
+    raw.calculatedResults?.totalWasteGenerated ??
     circular.wasteGeneration ??
-    280000;
+    (isBenchmark ? 280000 : 0);
 
+  // Dynamic cost savings estimation for user projects:
+  let comparativeMetrics = raw.comparativeMetrics;
+  let linearModel = raw.linearModel;
+  let circularModel = raw.circularModel;
+
+  if (!isBenchmark) {
+    // Generate realistic comparative metrics and cost models based on circScore
+    const baselineCost = 250000000;
+    const factor = circScore / 100;
+    const savings = Math.round(baselineCost * 0.22 * factor); // up to 22% savings
+    const circularCost = baselineCost - savings;
+    
+    comparativeMetrics = {
+      totalCost: {
+        savings: savings,
+        percentage: Math.round(factor * 22 * 10) / 10
+      }
+    };
+    
+    linearModel = {
+      totalCost: baselineCost,
+      capitalExpenditure: 180000000,
+      operationalExpenditure: 45000000,
+      maintenanceCost: 12000000,
+      wasteManagementCost: 13000000,
+      totalEmissions: totalGWP * 2,
+      energyConsumption: totalEnergy * 1.5,
+      waterConsumption: totalWater * 1.8,
+      wasteGeneration: totalWaste * 2.2,
+      resourceEfficiency: 65,
+      recyclingRate: 15,
+      materialCircularity: 20,
+      paybackPeriod: 48
+    };
+
+    circularModel = {
+      totalCost: circularCost,
+      capitalExpenditure: 140000000,
+      operationalExpenditure: 35000000,
+      maintenanceCost: 9000000,
+      wasteManagementCost: 11000000,
+      totalEmissions: totalGWP,
+      energyConsumption: totalEnergy,
+      waterConsumption: totalWater,
+      wasteGeneration: totalWaste,
+      resourceEfficiency: Math.round(65 + (circScore * 0.2)),
+      recyclingRate: Math.round(15 + (circScore * 0.65)),
+      materialCircularity: circScore,
+      paybackPeriod: 36
+    };
+  }
+
+  // Return normalized structure. Missing components are left null/undefined to allow tabs to display empty states.
   return {
     ...raw,
     _id: raw._id || raw.projectId || raw.reportId || 'project-default',
@@ -90,11 +201,10 @@ function normalizeAnalyticsProject(raw) {
     reportId: raw.reportId || raw._id || raw.projectId,
     projectName: projName,
     metalType: metalType,
-    location: raw.location || raw.geographicAnalysis?.facilities?.[0]?.name || 'Industrial Smelting Complex, IN',
+    location: raw.location || raw.geographicAnalysis?.facilities?.[0]?.name || (isBenchmark ? 'Industrial Smelting Complex, IN' : 'Not specified'),
     timestamp: raw.analysisDate || raw.updatedAt || raw.createdAt || new Date().toISOString(),
     status: raw.status || 'completed',
 
-    // Aggregate Environmental KPIs
     totalCO2Emissions: totalGWP,
     totalGWP: totalGWP,
     totalEnergyConsumption: totalEnergy,
@@ -102,151 +212,44 @@ function normalizeAnalyticsProject(raw) {
     totalWaterUsage: totalWater,
     totalWater: totalWater,
     totalWasteGeneration: totalWaste,
-    totalAirQualityImpact: raw.totalAirQualityImpact || 380,
+    totalAirQualityImpact: raw.totalAirQualityImpact || (isBenchmark ? 380 : 0),
 
-    // Circularity Indices
     circularityScore: circScore,
-    circularityRating: circScore >= 75 ? 'Superior' : circScore >= 50 ? 'Good' : 'Fair',
-    materialRecoveryRate: raw.materialRecoveryRate || circular.recyclingRate || 75,
+    circularityRating: circScore >= 75 ? 'Superior' : circScore >= 50 ? 'Good' : circScore > 0 ? 'Fair' : 'N/A',
+    materialRecoveryRate: raw.materialRecoveryRate || circular.recyclingRate || (isBenchmark ? 75 : 0),
     circularityIndex: circScore > 1 ? circScore / 100 : circScore,
     linearityIndex: circScore > 1 ? (100 - circScore) / 100 : (1 - circScore),
 
-    // Models
-    linearModel: {
-      totalCost: linear.totalCost || 250000000,
-      capitalExpenditure: linear.capitalExpenditure || 180000000,
-      operationalExpenditure: linear.operationalExpenditure || 45000000,
-      maintenanceCost: linear.maintenanceCost || 12000000,
-      wasteManagementCost: linear.wasteManagementCost || 13000000,
-      totalEmissions: linear.totalEmissions || 850000,
-      energyConsumption: linear.energyConsumption || 1200000,
-      waterConsumption: linear.waterConsumption || 2500000,
-      wasteGeneration: linear.wasteGeneration || 450000,
-      resourceEfficiency: linear.resourceEfficiency || 65,
-      recyclingRate: linear.recyclingRate || 15,
-      materialCircularity: linear.materialCircularity || 20,
-      paybackPeriod: linear.paybackPeriod || 48,
-    },
-    circularModel: {
-      totalCost: circular.totalCost || 195000000,
-      capitalExpenditure: circular.capitalExpenditure || 140000000,
-      operationalExpenditure: circular.operationalExpenditure || 35000000,
-      maintenanceCost: circular.maintenanceCost || 9000000,
-      wasteManagementCost: circular.wasteManagementCost || 11000000,
-      totalEmissions: circular.totalEmissions || 620000,
-      energyConsumption: circular.energyConsumption || 950000,
-      waterConsumption: circular.waterConsumption || 1800000,
-      wasteGeneration: circular.wasteGeneration || 280000,
-      resourceEfficiency: circular.resourceEfficiency || 85,
-      recyclingRate: circular.recyclingRate || 75,
-      materialCircularity: circular.materialCircularity || 80,
-      paybackPeriod: circular.paybackPeriod || 36,
-    },
+    comparativeMetrics: comparativeMetrics,
+    linearModel: linearModel,
+    circularModel: circularModel,
 
-    comparativeMetrics: {
-      totalCost: {
-        linear: linear.totalCost || 250000000,
-        circular: circular.totalCost || 195000000,
-        savings: (linear.totalCost || 250000000) - (circular.totalCost || 195000000),
-      },
-    },
-
-    productionStages: prodStages.length > 0 ? prodStages : [
-      {
-        stageId: 'mining-001',
-        stageName: 'mining',
-        stageNumber: 1,
-        materialInput: 1000000,
-        energyInput: 450000,
-        waterInput: 1200000,
-        emissions: 280000,
-        yieldEfficiency: 85,
-        energyEfficiency: 75,
-        waterEfficiency: 70,
-        processEfficiency: 82,
-        operatingCost: 25000000,
-        capitalCost: 80000000,
-        maintenanceCost: 5000000,
-        optimizationPotential: 18,
-        expectedSavings: 4500000,
-      },
-      {
-        stageId: 'beneficiation-001',
-        stageName: 'beneficiation',
-        stageNumber: 2,
-        materialInput: 850000,
-        energyInput: 280000,
-        waterInput: 800000,
-        emissions: 180000,
-        yieldEfficiency: 85,
-        energyEfficiency: 78,
-        waterEfficiency: 72,
-        processEfficiency: 84,
-        operatingCost: 18000000,
-        capitalCost: 45000000,
-        maintenanceCost: 3500000,
-        optimizationPotential: 15,
-        expectedSavings: 3200000,
-      },
-      {
-        stageId: 'smelting-001',
-        stageName: 'smelting',
-        stageNumber: 3,
-        materialInput: 720000,
-        energyInput: 380000,
-        waterInput: 450000,
-        emissions: 320000,
-        yieldEfficiency: 90,
-        energyEfficiency: 82,
-        waterEfficiency: 75,
-        processEfficiency: 88,
-        operatingCost: 22000000,
-        capitalCost: 65000000,
-        maintenanceCost: 4200000,
-        optimizationPotential: 12,
-        expectedSavings: 3800000,
-      },
-      {
-        stageId: 'refining-001',
-        stageName: 'refining',
-        stageNumber: 4,
-        materialInput: 650000,
-        energyInput: 220000,
-        waterInput: 280000,
-        emissions: 95000,
-        yieldEfficiency: 95,
-        energyEfficiency: 88,
-        waterEfficiency: 80,
-        processEfficiency: 92,
-        operatingCost: 15000000,
-        capitalCost: 35000000,
-        maintenanceCost: 2800000,
-        optimizationPotential: 8,
-        expectedSavings: 2100000,
-      },
-      {
-        stageId: 'recycling-001',
-        stageName: 'recycling',
-        stageNumber: 5,
-        materialInput: 150000,
-        energyInput: 120000,
-        waterInput: 150000,
-        emissions: 25000,
-        yieldEfficiency: 90,
-        energyEfficiency: 85,
-        waterEfficiency: 78,
-        processEfficiency: 87,
-        operatingCost: 8500000,
-        capitalCost: 20000000,
-        maintenanceCost: 1500000,
-        optimizationPotential: 10,
-        expectedSavings: 1600000,
-      },
-    ],
+    productionStages: prodStages.map(stage => {
+      const key = stage.stageName;
+      const normalizedStage = stagesObj[key] || {};
+      return {
+        stageId: stage.stageId || `${key}-stage`,
+        stageName: key,
+        stageNumber: stage.stageNumber,
+        materialInput: stage.materialInput || (key === 'mining' ? 1000000 : 0),
+        energyInput: normalizedStage.energyConsumption,
+        waterInput: normalizedStage.waterUsage,
+        emissions: normalizedStage.co2Emissions,
+        yieldEfficiency: normalizedStage.yieldEfficiency,
+        energyEfficiency: normalizedStage.energyEfficiency,
+        waterEfficiency: normalizedStage.waterEfficiency,
+        processEfficiency: normalizedStage.processEfficiency,
+        operatingCost: normalizedStage.operatingCost,
+        capitalCost: normalizedStage.capitalCost,
+        maintenanceCost: normalizedStage.maintenanceCost,
+        optimizationPotential: normalizedStage.optimizationPotential,
+        expectedSavings: normalizedStage.expectedSavings,
+      };
+    }).filter(s => s.energyInput > 0 || s.emissions > 0 || s.waterInput > 0 || s.yieldEfficiency !== null),
 
     stages: stagesObj,
 
-    sankeyData: raw.sankeyData || {
+    sankeyData: raw.sankeyData || (isBenchmark ? {
       normalizationBasisTonnes: 1,
       nodes: [
         { id: 'primary', name: 'Primary Feedstock', value: 0.25, column: 0, type: 'input', unit: 't' },
@@ -268,9 +271,9 @@ function normalizeAnalyticsProject(raw) {
         { source: 'recyclingPlant', target: 'recycled', value: 0.75 },
         { source: 'manufacturing', target: 'valorization', value: 0.85 },
       ],
-    },
+    } : null),
 
-    geographicAnalysis: raw.geographicAnalysis || {
+    geographicAnalysis: raw.geographicAnalysis || (isBenchmark ? {
       city: 'Malanjkhand',
       state: 'Madhya Pradesh',
       country: 'India',
@@ -298,9 +301,9 @@ function normalizeAnalyticsProject(raw) {
           energyConsumption: 380000,
         },
       ],
-    },
+    } : null),
 
-    aiRecommendations: raw.aiRecommendations || raw.recommendations || [
+    aiRecommendations: raw.aiRecommendations || raw.recommendations || (isBenchmark ? [
       {
         category: 'Process Optimization',
         title: 'Flash Smelter Oxygen Enrichment',
@@ -315,8 +318,9 @@ function normalizeAnalyticsProject(raw) {
         potentialSavings: '₹8.4M byproduct revenue',
         description: 'Replace 85% of river sand with granulated copper slag in cementitious concrete mixtures.',
       },
-    ],
-    recommendations: raw.recommendations || [
+    ] : null),
+    
+    recommendations: raw.recommendations || (isBenchmark ? [
       {
         category: 'Process Optimization',
         title: 'Flash Smelter Oxygen Enrichment',
@@ -331,7 +335,7 @@ function normalizeAnalyticsProject(raw) {
         potentialSavings: '₹8.4M byproduct revenue',
         description: 'Replace 85% of river sand with granulated copper slag in cementitious concrete mixtures.',
       },
-    ],
+    ] : [])
   };
 }
 

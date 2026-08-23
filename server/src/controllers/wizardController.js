@@ -489,17 +489,16 @@ const getWorkflows = asyncHandler(async (req, res) => {
   let workflows, total;
   
   if (!metalType) {
-    // Query both models
+    // Query both models without skip, but limit to skip + limit to avoid pagination drop
+    const combinedLimit = skip + parseInt(limit);
     const [aluminiumWorkflows, copperWorkflows] = await Promise.all([
       WizardWorkflow.find(query)
         .sort(sort)
-        .skip(skip)
-        .limit(parseInt(limit))
+        .limit(combinedLimit)
         .populate('userId', 'name email organization'),
       CopperWorkflow.find(query)
         .sort(sort)
-        .skip(skip)
-        .limit(parseInt(limit))
+        .limit(combinedLimit)
         .populate('userId', 'name email organization')
     ]);
     
@@ -511,7 +510,7 @@ const getWorkflows = asyncHandler(async (req, res) => {
         if (sort === '-createdAt') return b.createdAt - a.createdAt;
         return a.createdAt - b.createdAt;
       })
-      .slice(0, parseInt(limit));
+      .slice(skip, skip + parseInt(limit));
     
     const [aluminiumTotal, copperTotal] = await Promise.all([
       WizardWorkflow.countDocuments(query),

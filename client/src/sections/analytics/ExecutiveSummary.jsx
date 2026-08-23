@@ -166,6 +166,21 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
                 <p className="text-[#342744]/70">Key metrics from LCA analysis for {selectedProject.projectName}</p>
             </div>
 
+            {/* Warning banner for incomplete/draft projects */}
+            {(selectedProject.status === 'draft' || !selectedProject.totalCO2Emissions) && (
+                <div className="mb-6 p-4 bg-[#B87968]/15 border border-[#B87968]/30 rounded-lg text-[#9C6152] flex items-start gap-3">
+                    <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                        <span className="font-semibold block text-sm mb-0.5">Project Calculations in Progress</span>
+                        <p className="text-xs">
+                            This project has incomplete process stages or is in draft state. Complete the workflow and run "Calculate LCA" in the wizard to view final circularity and environmental impact scores.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {metrics.map((metric, index) => (

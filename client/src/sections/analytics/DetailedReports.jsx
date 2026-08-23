@@ -453,16 +453,22 @@ export default function DetailedReports({ mode, selectedProject }) {
                                 {sortedStages.map((stage, idx) => (
                                     <tr key={stage.stageId} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-4 py-3 text-sm font-medium text-gray-900">{stage.stageName}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-700">{stage.materialInput.toLocaleString()}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-700">{stage.energyInput.toLocaleString()}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-700">{stage.waterInput.toLocaleString()}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-700">{stage.productOutput.toLocaleString()}</td>
-                                        <td className="px-4 py-3 text-sm text-red-600 font-semibold">{stage.emissions.toLocaleString()}</td>
-                                        <td className="px-4 py-3 text-sm text-green-600 font-semibold">{stage.yieldEfficiency}%</td>
-                                        <td className="px-4 py-3 text-sm text-blue-600 font-semibold">{stage.energyEfficiency}%</td>
-                                        <td className="px-4 py-3 text-sm text-purple-600 font-semibold">{stage.processEfficiency}%</td>
+                                        <td className="px-4 py-3 text-sm text-gray-700">{(stage.materialInput ?? 0).toLocaleString()}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-700">{(stage.energyInput ?? 0).toLocaleString()}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-700">{(stage.waterInput ?? 0).toLocaleString()}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-700">{(stage.productOutput ?? 0).toLocaleString()}</td>
+                                        <td className="px-4 py-3 text-sm text-red-600 font-semibold">{(stage.emissions ?? 0).toLocaleString()}</td>
+                                        <td className="px-4 py-3 text-sm text-green-600 font-semibold">
+                                            {stage.yieldEfficiency !== null && stage.yieldEfficiency !== undefined ? `${stage.yieldEfficiency}%` : 'N/A'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-blue-600 font-semibold">
+                                            {stage.energyEfficiency !== null && stage.energyEfficiency !== undefined ? `${stage.energyEfficiency}%` : 'N/A'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-purple-600 font-semibold">
+                                            {stage.processEfficiency !== null && stage.processEfficiency !== undefined ? `${stage.processEfficiency}%` : 'N/A'}
+                                        </td>
                                         <td className="px-4 py-3 text-sm text-orange-600 font-semibold">
-                                            ${stage.operatingCost.toLocaleString()}
+                                            {stage.operatingCost !== null && stage.operatingCost !== undefined ? `$${stage.operatingCost.toLocaleString()}` : 'N/A'}
                                         </td>
                                     </tr>
                                 ))}
@@ -476,31 +482,39 @@ export default function DetailedReports({ mode, selectedProject }) {
                             <div>
                                 <div className="text-gray-600">Total Material Input</div>
                                 <div className="text-lg font-bold text-gray-900">
-                                    {sortedStages.reduce((sum, s) => sum + s.materialInput, 0).toLocaleString()} t
+                                    {sortedStages.reduce((sum, s) => sum + (s.materialInput ?? 0), 0).toLocaleString()} t
                                 </div>
                             </div>
                             <div>
                                 <div className="text-gray-600">Total Energy</div>
                                 <div className="text-lg font-bold text-gray-900">
-                                    {sortedStages.reduce((sum, s) => sum + s.energyInput, 0).toLocaleString()} MJ
+                                    {sortedStages.reduce((sum, s) => sum + (s.energyInput ?? 0), 0).toLocaleString()} MJ
                                 </div>
                             </div>
                             <div>
                                 <div className="text-gray-600">Total Emissions</div>
                                 <div className="text-lg font-bold text-red-600">
-                                    {sortedStages.reduce((sum, s) => sum + s.emissions, 0).toLocaleString()} kg
+                                    {sortedStages.reduce((sum, s) => sum + (s.emissions ?? 0), 0).toLocaleString()} kg
                                 </div>
                             </div>
                             <div>
                                 <div className="text-gray-600">Avg Yield Efficiency</div>
                                 <div className="text-lg font-bold text-green-600">
-                                    {(sortedStages.reduce((sum, s) => sum + s.yieldEfficiency, 0) / sortedStages.length).toFixed(1)}%
+                                    {(() => {
+                                        const validStages = sortedStages.filter(s => s.yieldEfficiency !== null && s.yieldEfficiency !== undefined);
+                                        return validStages.length > 0
+                                            ? `${(validStages.reduce((sum, s) => sum + s.yieldEfficiency, 0) / validStages.length).toFixed(1)}%`
+                                            : 'N/A';
+                                    })()}
                                 </div>
                             </div>
                             <div>
                                 <div className="text-gray-600">Total Operating Cost</div>
                                 <div className="text-lg font-bold text-orange-600">
-                                    ${sortedStages.reduce((sum, s) => sum + s.operatingCost, 0).toLocaleString()}
+                                    {(() => {
+                                        const totalCost = sortedStages.reduce((sum, s) => sum + (s.operatingCost ?? 0), 0);
+                                        return totalCost > 0 ? `$${totalCost.toLocaleString()}` : 'N/A';
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -675,48 +689,60 @@ export default function DetailedReports({ mode, selectedProject }) {
                         </div>
 
                         {/* Model Comparison */}
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Linear vs Circular Comparison</h3>
-                            <div className="space-y-4">
-                                {[
-                                    { label: 'Total Cost', linear: linearModel.totalCost, circular: circularModel.totalCost, format: 'currency' },
-                                    { label: 'Total Emissions', linear: linearModel.totalEmissions, circular: circularModel.totalEmissions, format: 'number' },
-                                    { label: 'Energy Consumption', linear: linearModel.energyConsumption, circular: circularModel.energyConsumption, format: 'number' },
-                                    { label: 'Resource Efficiency', linear: linearModel.resourceEfficiency, circular: circularModel.resourceEfficiency, format: 'percent' },
-                                    { label: 'Recycling Rate', linear: linearModel.recyclingRate, circular: circularModel.recyclingRate, format: 'percent' }
-                                ].map(({ label, linear, circular, format }) => {
-                                    const improvement = ((circular - linear) / linear * 100);
-                                    const isPositive = improvement > 0;
-                                    
-                                    return (
-                                        <div key={label} className="border border-gray-200 rounded-lg p-3">
-                                            <div className="font-semibold text-gray-900 mb-2">{label}</div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="text-sm">
-                                                    <div className="text-gray-600">Linear</div>
-                                                    <div className="font-bold text-red-600">
-                                                        {format === 'currency' ? `$${linear?.toLocaleString()}` :
-                                                         format === 'percent' ? `${linear}%` : linear?.toLocaleString()}
+                        {linearModel && linearModel.totalCost !== undefined && circularModel && circularModel.totalCost !== undefined ? (
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Linear vs Circular Comparison</h3>
+                                <div className="space-y-4">
+                                    {[
+                                        { label: 'Total Cost', linear: linearModel.totalCost, circular: circularModel.totalCost, format: 'currency' },
+                                        { label: 'Total Emissions', linear: linearModel.totalEmissions, circular: circularModel.totalEmissions, format: 'number' },
+                                        { label: 'Energy Consumption', linear: linearModel.energyConsumption, circular: circularModel.energyConsumption, format: 'number' },
+                                        { label: 'Resource Efficiency', linear: linearModel.resourceEfficiency, circular: circularModel.resourceEfficiency, format: 'percent' },
+                                        { label: 'Recycling Rate', linear: linearModel.recyclingRate, circular: circularModel.recyclingRate, format: 'percent' }
+                                    ].map(({ label, linear, circular, format }) => {
+                                        const improvement = ((circular - linear) / linear * 100);
+                                        const isPositive = improvement > 0;
+                                        
+                                        return (
+                                            <div key={label} className="border border-gray-200 rounded-lg p-3">
+                                                <div className="font-semibold text-gray-900 mb-2">{label}</div>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="text-sm">
+                                                        <div className="text-gray-600">Linear</div>
+                                                        <div className="font-bold text-red-600">
+                                                            {format === 'currency' ? `$${linear?.toLocaleString()}` :
+                                                             format === 'percent' ? `${linear}%` : linear?.toLocaleString()}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="text-center">
-                                                    <div className={`text-xs font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                                                        {isPositive ? '+' : ''}{improvement.toFixed(1)}%
+                                                    <div className="text-center">
+                                                        <div className={`text-xs font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {isPositive ? '+' : ''}{improvement.toFixed(1)}%
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="text-sm text-right">
-                                                    <div className="text-gray-600">Circular</div>
-                                                    <div className="font-bold text-green-600">
-                                                        {format === 'currency' ? `$${circular?.toLocaleString()}` :
-                                                         format === 'percent' ? `${circular}%` : circular?.toLocaleString()}
+                                                    <div className="text-sm text-right">
+                                                        <div className="text-gray-600">Circular</div>
+                                                        <div className="font-bold text-green-600">
+                                                            {format === 'currency' ? `$${circular?.toLocaleString()}` :
+                                                             format === 'percent' ? `${circular}%` : circular?.toLocaleString()}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col justify-center items-center text-center">
+                                <svg className="w-12 h-12 text-[#A996C7]/60 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <h4 className="text-sm font-semibold text-[#342744]">Model Comparison Unavailable</h4>
+                                <p className="text-xs text-[#342744]/70 max-w-xs mt-1">
+                                    Detailed linear vs circular cost model comparison is only available for benchmark simulation projects.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
